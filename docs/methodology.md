@@ -26,10 +26,11 @@ To what extent do communication communities align with formal department boundar
   - Analysis density (strictly interpersonal directed pairs):
     $$\rho_{\text{analysis}} = \frac{|E_{\text{interpersonal}}|}{|V|(|V|-1)} = \frac{24,929}{1,005 \times 1,004} = \frac{24,929}{1,009,020} \approx 0.024706$$
 - **Uniform Random Ordered-Pair Reference Model (Department Baseline):**
-  Holding empirical department sizes $S_d$ ($d \in \{0, \dots, 41\}$) fixed, the expected fraction of edges falling within the same department under a uniform random allocation across all ordered pairs $(u, v)$ with $u \neq v$ is:
+  Holding empirical department sizes $S_d$ ($d \in \{0, \dots, 41\}$) fixed, the expected fraction of directed communication links falling within the same department under a uniform random allocation across all ordered pairs $(u, v)$ with $u \neq v$ is:
   $$p_{\text{null}} = \frac{\sum_{d=0}^{41} S_d(S_d - 1)}{|V|(|V| - 1)} = \frac{47,088}{1,009,020} \approx 0.046667 \quad (4.67\%)$$
-  Empirical within-department communication ($34.68\%$) is evaluated against $p_{\text{null}}$ to determine the homophily enrichment ratio:
+  Empirical within-department communication links ($34.68\%$) are evaluated against $p_{\text{null}}$ to determine the homophily enrichment ratio:
   $$\text{Enrichment} = \frac{f_{\text{within}}}{p_{\text{null}}} = \frac{0.346785}{0.046667} \approx 7.43\times$$
+
 
 
 ---
@@ -37,12 +38,17 @@ To what extent do communication communities align with formal department boundar
 ## 3. Algorithm Classes and Formulations
 
 ### Algorithm Class 1: PageRank (Lecture 6)
-PageRank models stationary probability under random walk with uniform teleportation:
-$$PR(v) = \frac{1 - d}{|V|} + d \sum_{u \in In(v)} \frac{PR(u)}{Out(u)}$$
-- Primary damping factor: $d = 0.85$.
+PageRank models stationary probability under a random surfer model with uniform teleportation and dangling-node mass redistribution:
+$$PR(v) = \frac{1 - d}{|V|} + d \sum_{u \in In(v)} \frac{PR(u)}{Out(u)} + d \sum_{w \in Dangling} \frac{PR(w)}{|V|}$$
+- In NetworkX (`nx.pagerank`), dangling nodes (nodes with $Out(w) = 0$, including completely isolated nodes) distribute their remaining probability mass uniformly across all $|V|$ nodes in accordance with the personalization vector. Consequently, isolated nodes converge to a final PageRank strictly greater than $(1 - d)/|V|$ due to the cumulative redistribution from all dangling nodes in the network.
+- Primary parameters: Damping factor $d = 0.85$, convergence tolerance $\text{tol} = 10^{-6}$, maximum iterations $\text{max\_iter} = 500$, uniform personalization.
 - Baseline comparison: In-degree $k_{in}(v) = |In(v)|$.
-- Centrality correlation: Spearman rank correlation $\rho_s$ and top-$k$ overlap for $k \in \{10, 20, 50\}$.
-- Sensitivity check: $d \in \{0.75, 0.85, 0.95\}$.
+- Centrality correlation: Spearman rank correlation $\rho_s$ with exact p-value.
+- Top-$k$ Overlap: Evaluated for $k \in \{10, 20, 50\}$ (representing the top ~1%, 2%, and 5% of the institution), defined strictly as:
+  $$\text{Overlap}(k) = \frac{|\text{TopK}_{\text{PageRank}} \cap \text{TopK}_{\text{InDegree}}|}{k}$$
+- Sensitivity analysis: Damping factors $d \in \{0.75, 0.85, 0.95\}$ evaluated via pairwise Spearman $\rho_s$ and top-$k$ Jaccard similarities.
+- Self-loop robustness: PageRank evaluated on $G_{\text{raw}}$ vs. $G_{\text{analysis}}$ at $d = 0.85$ to quantify the distortionary effect of reflexive loops.
+
 
 ### Algorithm Class 2: Louvain Modularity Optimization (Lecture 7)
 Louvain optimizes modularity on the unweighted undirected projection of the communication graph:

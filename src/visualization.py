@@ -247,3 +247,278 @@ def generate_all_exploratory_figures(
         "fig2": plot_department_size_distribution(G, output_dir),
         "fig3": plot_within_vs_cross_department_edges(G, output_dir),
     }
+
+
+def plot_pagerank_vs_indegree(
+    df: pd.DataFrame,
+    rho: float,
+    disagreements: Optional[Dict[str, pd.DataFrame]] = None,
+    output_dir: Optional[Path | str] = None,
+) -> Tuple[Path, Path]:
+    """Plot PageRank score vs In-Degree with rank disagreement highlights.
+
+    Figure 4: Centrality Comparison (PageRank vs. In-Degree).
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
+
+    # Panel A: Raw Metric Values (Scatter with density)
+    axes[0].scatter(
+        df["in_degree"],
+        df["pagerank"] * 1000,  # Scaled for readability
+        alpha=0.55,
+        color="#1f77b4",
+        edgecolors="none",
+        s=28,
+        label="Instituion Members (N=1,005)",
+    )
+
+    # Highlight top disagreements if provided
+    if disagreements:
+        pr_boosted = disagreements.get("pagerank_boosted")
+        in_boosted = disagreements.get("in_degree_boosted")
+
+        if pr_boosted is not None and not pr_boosted.empty:
+            axes[0].scatter(
+                pr_boosted["in_degree"],
+                pr_boosted["pagerank"] * 1000,
+                color="#2ca02c",
+                s=70,
+                marker="^",
+                label="PageRank Boosted (High PR / Lower In-Deg)",
+                edgecolors="black",
+                linewidth=0.8,
+            )
+            # Annotate a few
+            for _, r in pr_boosted.head(3).iterrows():
+                axes[0].annotate(
+                    f"N{int(r['node_id'])}",
+                    (r["in_degree"], r["pagerank"] * 1000),
+                    textcoords="offset points",
+                    xytext=(-15, 8),
+                    fontsize=8,
+                    weight="bold",
+                )
+
+        if in_boosted is not None and not in_boosted.empty:
+            axes[0].scatter(
+                in_boosted["in_degree"],
+                in_boosted["pagerank"] * 1000,
+                color="#d62728",
+                s=70,
+                marker="v",
+                label="In-Degree Boosted (High In-Deg / Lower PR)",
+                edgecolors="black",
+                linewidth=0.8,
+            )
+            for _, r in in_boosted.head(3).iterrows():
+                axes[0].annotate(
+                    f"N{int(r['node_id'])}",
+                    (r["in_degree"], r["pagerank"] * 1000),
+                    textcoords="offset points",
+                    xytext=(8, -10),
+                    fontsize=8,
+                    weight="bold",
+                )
+
+    axes[0].set_xlabel("In-Degree ($k_{in}$)")
+    axes[0].set_ylabel(r"PageRank Score ($\times 10^{-3}$)")
+    axes[0].set_title(f"(a) PageRank vs. In-Degree Centrality\n(Spearman Rank Correlation: $\\rho_s = {rho:.4f}$)")
+    axes[0].legend(loc="upper left", fontsize=9)
+    axes[0].grid(True, linestyle="--", alpha=0.5)
+
+    # Panel B: Rank-Rank Comparison (1 = Highest Centrality)
+    axes[1].scatter(
+        df["in_degree_rank"],
+        df["pagerank_rank"],
+        alpha=0.45,
+        color="#4b2e83",
+        s=20,
+        edgecolors="none",
+    )
+    # 45-degree identity line
+    axes[1].plot([1, 1005], [1, 1005], color="gray", linestyle="--", linewidth=1.2, label="Identity ($y = x$)")
+
+    if disagreements:
+        if pr_boosted is not None and not pr_boosted.empty:
+            axes[1].scatter(
+                pr_boosted["in_degree_rank"],
+                pr_boosted["pagerank_rank"],
+                color="#2ca02c",
+                s=60,
+                marker="^",
+                label="PR Boosted",
+                edgecolors="black",
+            )
+        if in_boosted is not None and not in_boosted.empty:
+            axes[1].scatter(
+                in_boosted["in_degree_rank"],
+                in_boosted["pagerank_rank"],
+                color="#d62728",
+                s=60,
+                marker="v",
+                label="In-Degree Boosted",
+                edgecolors="black",
+            )
+
+    axes[1].set_xlabel("In-Degree Rank (1 = Most Contacted)")
+    axes[1].set_ylabel("PageRank Rank (1 = Highest Prominence)")
+    axes[1].set_title("(b) Rank-Rank Comparison (N = 1,005)")
+    axes[1].legend(loc="upper left", fontsize=9)
+    axes[1].grid(True, linestyle="--", alpha=0.5)
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig4_pagerank_vs_indegree.png"
+    pdf_path = out_dir / "fig4_pagerank_vs_indegree.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved PageRank vs In-Degree plots to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path
+
+
+def plot_top_ranked_comparison(
+    df: pd.DataFrame, k: int = 20, output_dir: Optional[Path | str] = None
+) -> Tuple[Path, Path]:
+    """Plot ranking slopegraph comparing the top-k individuals under PageRank and In-Degree.
+
+    Figure 5: Top-k Centrality Ranking Shifts.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Union of top-k under both metrics
+    top_pr = set(df.sort_values(by="pagerank_rank")["node_id"].head(k))
+    top_in = set(df.sort_values(by="in_degree_rank")["node_id"].head(k))
+    union_nodes = top_pr.union(top_in)
+
+    sub_df = df[df["node_id"].isin(union_nodes)].copy()
+    sub_df = sub_df.sort_values(by="pagerank_rank")
+
+    fig, ax = plt.subplots(figsize=(9, 8))
+
+    for _, row in sub_df.iterrows():
+        node_id = int(row["node_id"])
+        pr_r = int(row["pagerank_rank"])
+        in_r = int(row["in_degree_rank"])
+
+        # Determine color
+        if node_id in top_pr and node_id in top_in:
+            color = "#2b5c8f"  # Prominent in both
+            alpha = 0.85
+            lw = 1.8
+        elif node_id in top_pr:
+            color = "#2ca02c"  # Top only in PR
+            alpha = 0.95
+            lw = 2.2
+        else:
+            color = "#d62728"  # Top only in In-Degree
+            alpha = 0.95
+            lw = 2.2
+
+        ax.plot([0, 1], [pr_r, in_r], marker="o", markersize=6, color=color, alpha=alpha, linewidth=lw)
+
+        # Labels
+        if pr_r <= 25:
+            ax.text(-0.03, pr_r, f"N{node_id} (R{pr_r})", ha="right", va="center", fontsize=8, color=color)
+        if in_r <= 25:
+            ax.text(1.03, in_r, f"N{node_id} (R{in_r})", ha="left", va="center", fontsize=8, color=color)
+
+    ax.set_xlim(-0.35, 1.35)
+    ax.set_ylim(max(sub_df["pagerank_rank"].max(), sub_df["in_degree_rank"].max()) + 2, 0.5)  # Inverted so rank 1 is top
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(["PageRank Rank", "In-Degree Rank"], fontsize=12, weight="bold")
+    ax.set_ylabel("Rank (1 = Highest Centrality)")
+    ax.set_title(f"Rank Comparison for Top-{k} Prominent Individuals\n(Blue: Both, Green: Top in PR only, Red: Top in In-Degree only)")
+    ax.grid(True, axis="y", linestyle="--", alpha=0.4)
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig5_top_ranked_comparison.png"
+    pdf_path = out_dir / "fig5_top_ranked_comparison.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved top-ranked comparison plot to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path
+
+
+def plot_pagerank_sensitivity(
+    sensitivity_data: Dict[str, Any], output_dir: Optional[Path | str] = None
+) -> Tuple[Path, Path]:
+    """Plot PageRank ranking trajectories of top nodes across damping factors d in {0.75, 0.85, 0.95}.
+
+    Figure 6: PageRank Sensitivity Analysis.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    damping_factors = sensitivity_data["damping_factors"]
+    rankings_by_damping = sensitivity_data["rankings_by_damping"]
+
+    # Select top 15 nodes under baseline d=0.85
+    base_top15 = rankings_by_damping[0.85].nsmallest(15).index.tolist()
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
+
+    # Panel A: Trajectory Bump Chart for Top-15 Nodes
+    x_indices = np.arange(len(damping_factors))
+    for node in base_top15:
+        ranks = [rankings_by_damping[d][node] for d in damping_factors]
+        axes[0].plot(
+            x_indices,
+            ranks,
+            marker="o",
+            linewidth=2,
+            alpha=0.8,
+            label=f"N{node}",
+        )
+        axes[0].text(x_indices[-1] + 0.04, ranks[-1], f"N{node} (#{ranks[-1]})", va="center", fontsize=8)
+
+    axes[0].set_xticks(x_indices)
+    axes[0].set_xticklabels([f"d = {d}" for d in damping_factors], fontsize=11, weight="bold")
+    axes[0].set_ylabel("PageRank Rank (Inverted: 1 = Top)")
+    axes[0].set_ylim(22, 0.5)  # Inverted
+    axes[0].set_title("(a) Rank Stability of Top-15 Nodes Across Damping Factors")
+    axes[0].grid(True, linestyle="--", alpha=0.5)
+
+    # Panel B: Top-k Overlap Stability Bar Chart
+    k_vals = [10, 20, 50]
+    comparisons = [d for d in damping_factors if d != 0.85]
+    x_b = np.arange(len(k_vals))
+    width = 0.35
+
+    overlap_075 = [sensitivity_data["top_k_overlaps"]["d=0.85_vs_d=0.75"][f"top_{k}"]["overlap_fraction"] * 100 for k in k_vals]
+    overlap_095 = [sensitivity_data["top_k_overlaps"]["d=0.85_vs_d=0.95"][f"top_{k}"]["overlap_fraction"] * 100 for k in k_vals]
+
+    bars1 = axes[1].bar(x_b - width/2, overlap_075, width, label="d = 0.85 vs. d = 0.75", color="#3498db", alpha=0.85)
+    bars2 = axes[1].bar(x_b + width/2, overlap_095, width, label="d = 0.85 vs. d = 0.95", color="#9b59b6", alpha=0.85)
+
+    for bar in bars1:
+        axes[1].text(bar.get_x() + bar.get_width()/2, bar.get_height() - 7, f"{bar.get_height():.0f}%", ha="center", color="white", weight="bold")
+    for bar in bars2:
+        axes[1].text(bar.get_x() + bar.get_width()/2, bar.get_height() - 7, f"{bar.get_height():.0f}%", ha="center", color="white", weight="bold")
+
+    axes[1].set_xticks(x_b)
+    axes[1].set_xticklabels([f"Top {k}\n(Elite {k/10.05:.1f}%)" for k in k_vals], fontsize=10)
+    axes[1].set_ylabel("Overlap Fraction (%)")
+    axes[1].set_ylim(0, 110)
+    axes[1].set_title("(b) Top-k Rank Set Overlap Relative to d = 0.85")
+    axes[1].legend(loc="lower right")
+    axes[1].grid(True, axis="y", linestyle="--", alpha=0.5)
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig6_pagerank_sensitivity.png"
+    pdf_path = out_dir / "fig6_pagerank_sensitivity.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved PageRank sensitivity plots to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path

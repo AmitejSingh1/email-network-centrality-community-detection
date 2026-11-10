@@ -23,11 +23,23 @@
 ## Decision 1.1: Maintenance of Dual Graph Representations (G_raw vs. G_analysis)
 - **Context:** Self-loops represent an individual emailing themselves (e.g. personal notes, draft storage, automated calendar echoes) rather than interpersonal exchange. Retaining 642 self-loops inflates within-department communication counts and introduces artificial self-endorsement loops in PageRank.
 - **Choice:** Explicitly instantiate `G_raw` (1,005 nodes, 25,571 edges) for baseline auditing and exact SNAP reproduction, and `G_analysis` (1,005 nodes, 24,929 edges) as the primary graph for all subsequent algorithms.
-- **Preservation of Zero-Degree Nodes:** When self-loops are removed, the 19 singleton nodes become degree-0 nodes in `G_analysis`. They are strictly retained with their ground-truth department labels. In standard PageRank, degree-0 nodes receive teleportation probability $(1 - d)/N$ and do not distribute probability outwards, correctly reflecting their complete isolation from interpersonal email flows.
+- **Preservation of Zero-Degree Nodes & Dangling Redistribution:** When self-loops are removed, the 19 singleton nodes become degree-0 nodes in `G_analysis`. They are strictly retained with their ground-truth department labels. In NetworkX PageRank, dangling nodes (out-degree = 0) do not sink probability; their mass is redistributed uniformly across all $|V|=1,005$ nodes at each iteration. Thus, isolated nodes receive their teleportation baseline $(1-d)/N$ plus a uniform fraction of the redistributed dangling mass from all dangling nodes in the network, converging to a non-zero stationary score ($0.0001976$) without biasing the rankings.
 
 ## Decision 1.2: Departmental Comparison against Uniform Random Ordered-Pair Reference Model
 - **Context:** An empirical within-department communication fraction (e.g. 34.7%) cannot be interpreted in a vacuum without knowing what fraction would be expected purely by chance given the uneven department size distribution.
 - **Choice:** Compute an exact analytical reference baseline $p_{\text{null}} = \sum_d S_d(S_d - 1) / [N(N - 1)] \approx 4.67\%$. Compare empirical within-department fraction against $p_{\text{null}}$ to compute the homophily enrichment factor ($7.43\times$).
 - **Caution:** Clearly label this as an unconstrained uniform random baseline rather than a degree-preserving stub-matching configuration model. It serves as a benchmark for departmental concentration without implying organizational causality.
+
+## Decision 2.1: Deterministic Centrality Ranking and Tie-Handling Convention
+- **Context:** Discrete in-degree integers frequently produce identical degree ties across different nodes.
+- **Choice:** Maintain two ranking representations in `src/centrality.py`:
+  1. `rank(method='min')` for standard competition ranking where identical values share the minimum rank.
+  2. `rank_unique` where ties are deterministically broken by ascending `node_id`.
+- **Rationale:** Ensures complete reproducibility across operating systems and prevents non-deterministic ranking shifts during top-$k$ set evaluations.
+
+## Decision 2.2: Analytical Rationale for Self-Loop Exclusion in PageRank
+- **Context:** In $G_{\text{raw}}$, a singleton node with a self-loop acts as a sink that circulates $85\%$ of its mass back into itself, achieving $PR \approx 0.001209$ (rank 380 out of 1,005). An individual who never communicated with anyone else is artificially elevated above $62\%$ of the institution.
+- **Choice:** By removing self-loops in $G_{\text{analysis}}$, singleton nodes become true dangling nodes, correctly placing them at the bottom of the prominence distribution ($PR \approx 0.0001976$, rank 987 out of 1,005).
+
 
 
