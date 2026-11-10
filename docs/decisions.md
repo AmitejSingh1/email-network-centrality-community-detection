@@ -51,6 +51,17 @@
 - **Context:** Louvain discovers 9 non-trivial communities with modularity $Q = 0.413$, compared to the 42 formal departments with $Q = 0.288$.
 - **Interpretation Rule:** Do not interpret higher Louvain modularity as proof that discovered communities are "superior" or "ground truth" organizational units. Modularity is directly optimized by Louvain by construction. The comparison demonstrates that organic communication reorganizes the 42 administrative units into larger cross-departmental communication alliances.
 
+## Decision 4.1: Dual Formulation of Cross-Community Connectivity and Handling of Isolates
+- **Context:** Examining whether prominent individuals act as boundary spanners requires measuring their connectivity across community boundaries. Relying solely on raw count favors high-degree nodes; relying solely on fraction overemphasizes peripheral nodes with one out-of-community link (100% fraction). Furthermore, isolated nodes have degree 0.
+- **Choice:** Evaluate both `cross_community_count` and `cross_community_fraction = cross_community_count / degree` on the undirected projection $G_{\text{undirected}}$. For isolated nodes with degree 0 (the 19 singletons), set `cross_community_count = 0` and `cross_community_fraction = NaN` (strictly omitted from fractional distributions without imputing 0 or 1).
+- **Rationale:** The dual representation distinguishes true structural brokers (high PageRank, high count, high fraction) from internal hubs (high PageRank, high count, low fraction) and peripheral bridges (low PageRank, low count, high fraction).
+
+## Decision 4.2: Interpretation of Statistical Tests Under Network Autocorrelation
+- **Context:** Comparing the Top 10% PageRank tier against the Remaining 90% yields $p < 10^{-50}$ on the two-sample Mann-Whitney U test.
+- **Choice:** Explicitly document that network nodes violate the i.i.d. assumption underlying classical inferential statistics due to dyadic dependence, structural equivalence, and homophily.
+- **Rationale:** The Mann-Whitney U test and Spearman p-values are reported strictly as descriptive indicators of large distributional separation, not as rigorous hypothesis tests confirming statistical independence or causal institutional authority.
+
+
 
 
 

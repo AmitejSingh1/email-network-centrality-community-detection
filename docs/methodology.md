@@ -73,7 +73,13 @@ $$Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \right] \delta(
 
 
 ### Integrated Metric: Cross-Community Connectivity
-For each individual node $v$ in undirected graph $G$:
-$$CrossCommunityFraction(v) = \frac{|\{u \in N(v) \mid c_u \neq c_v\}|}{d(v)}$$
-with $CrossCommunityCount(v) = |\{u \in N(v) \mid c_u \neq c_v\}|$.
-For isolated nodes ($d(v) = 0$), $CrossCommunityFraction(v)$ is undefined (`NaN`).
+To examine the structural role of central individuals relative to communication communities, we evaluate boundary connectivity on the undirected projection $G_{\text{undirected}}$:
+$$\text{CrossCommunityCount}(v) = |\{u \in N(v) \mid c_u \neq c_v\}|$$
+$$\text{CrossCommunityFraction}(v) = \frac{|\{u \in N(v) \mid c_u \neq c_v\}|}{d(v)}$$
+- **Zero-Degree Handling:** For isolated nodes where $d(v) = 0$ (the 19 peripheral singletons), $\text{CrossCommunityFraction}(v)$ is formally undefined and recorded as `NaN` to prevent division-by-zero artifacts.
+- **Dual Reporting:** Both absolute count and normalized fraction are reported simultaneously. Reporting count prevents misinterpreting peripheral nodes with $1/1 = 100\%$ boundary connectivity as major institutional bridges; reporting fraction prevents purely degree-driven confounding.
+- **Statistical Comparison Methodology:**
+  - Nodes are partitioned into the Top 10% PageRank tier ($N = 101$, representing elite prominence) and the Remaining 90% tier ($N = 904$).
+  - Two-sample comparisons use descriptive statistics (mean, median, standard deviation) and the non-parametric Mann-Whitney U test.
+  - **Network Dependence Limitation:** Standard inferential hypothesis tests (such as Mann-Whitney U or independent-samples tests) assume independent and identically distributed (i.i.d.) observations. Because nodes embedded in an email network violate independence through topological interdependence and edge reciprocity, reported p-values are treated as descriptive indicators of distributional separation rather than formal causal proofs.
+

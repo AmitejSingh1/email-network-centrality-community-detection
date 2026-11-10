@@ -153,3 +153,68 @@
   - `reports/figures/fig9_louvain_robustness.{png,pdf}`: Seed stability ARI heatmap and resolution sensitivity curve.
 - **Test Suite Status:** 34 passed in 4.23s.
 - **Status:** Checkpoint 3 verified.
+
+---
+
+## Experiment EXP-04: Checkpoint 4 — Integrated Analysis: PageRank Centrality & Cross-Community Connectivity
+- **Date:** 2026-11-11
+- **Substrate Graph:** $G_{\text{undirected}}$ (1,005 nodes, 16,064 undirected edges) combined with PageRank on $G_{\text{analysis}}$ ($\alpha = 0.85$, uniform personalization) and Louvain community assignments ($\gamma = 1.0, \text{seed} = 42$).
+- **Objective:** Directly evaluate Research Question 3: What role do highly central individuals play in connecting different communication communities? Test whether top PageRank individuals disproportionately act as boundary spanners vs. internal hubs.
+- **Node Tier Definitions:**
+  - **Top 10% PageRank Tier:** $N = 101$ nodes (ranks 1 to 101).
+  - **Remaining 90% Tier:** $N = 904$ nodes (ranks 102 to 1,005).
+- **Key Empirical Findings (RQ3 Core Evidence):**
+  - **Cross-Community Edge Count:**
+    - Top 10%: Mean = **67.88**, Std = 43.68, Median = **57.0**, Min = 0, Max = 294.
+    - Remaining 90%: Mean = **7.94**, Std = 10.37, Median = **4.0**, Min = 0, Max = 80.
+    - Ratio of Means: **$8.55\times$** higher absolute cross-community connectivity for top-tier individuals.
+    - Two-sample Mann-Whitney U test: $U = 90,832.0, p = 1.01 \times 10^{-58}$.
+  - **Cross-Community Edge Fraction** (excluding 19 isolates with NaN, leaving 885 nodes in Remaining 90%):
+    - Top 10% ($N = 101$): Mean = **$55.79\%$** ($0.5579$), Std = $0.1704$, Median = **$58.43\%$** ($0.5843$), Min = $0.00\%$, Max = $91.67\%$.
+    - Remaining 90% ($N = 885$): Mean = **$26.56\%$** ($0.2656$), Std = $0.2443$, Median = **$25.00\%$** ($0.2500$), Min = $0.00\%$, Max = $100.00\%$.
+    - Ratio of Means: **$> 2.1\times$** higher proportion of ties directed across community boundaries.
+    - Two-sample Mann-Whitney U test: $U = 77,532.0, p = 5.25 \times 10^{-35}$.
+- **Correlation Analysis:**
+  - PageRank vs. Cross-Community Edge Count: Spearman $\rho_s = \mathbf{0.9419}$ ($p < 10^{-300}$).
+  - PageRank vs. Cross-Community Edge Fraction: Spearman $\rho_s = \mathbf{0.5842}$ ($p = 7.42 \times 10^{-90}$).
+  - In-Degree vs. Cross-Community Edge Count: Spearman $\rho_s = 0.9631$.
+  - In-Degree vs. Cross-Community Edge Fraction: Spearman $\rho_s = 0.6030$.
+- **Archetypal Case Studies:**
+  1. **Global Boundary Spanner (Node 160):**
+     - Department 36, Louvain Community 4.
+     - PageRank Score = $0.007495$ (Rank 1 overall), In-Degree = 211 (Rank 1).
+     - Total Undirected Degree = 345 (Internal = 51, Cross-Community = 294).
+     - Cross-Community Fraction = **$85.22\%$**.
+     - Distinct Communities Spanned = **8** (communicates with every non-trivial community except C8).
+     - Interpretation: Node 160 serves as the primary organizational backbone connecting disparate communication clusters across the institution.
+  2. **Internal Community Hub (Node 451):**
+     - Department 14, Louvain Community 6.
+     - PageRank Score = $0.003067$ (Rank 37 overall), In-Degree = 8 (Rank 659, $\Delta R = +622$).
+     - Total Undirected Degree = 13 (Internal = 13, Cross-Community = 0).
+     - Cross-Community Fraction = **$0.00\%$**.
+     - Distinct Communities Spanned = 0.
+     - Interpretation: Demonstrates that high PageRank does not guarantee boundary spanning. Node 451 owes its elevated status to concentrated inward endorsements within Community 6.
+  3. **Peripheral Bridge (Node 644):**
+     - Department 25, Louvain Community 7.
+     - PageRank Score = $0.000572$ (Rank 633 overall), In-Degree = 11 (Rank 602).
+     - Total Undirected Degree = 15 (Internal = 2, Cross-Community = 13).
+     - Cross-Community Fraction = **$86.67\%$**.
+     - Distinct Communities Spanned = 4.
+     - Interpretation: Illustrates why fraction alone is misleading. While $86.7\%$ of its connections leave Community 7, its low absolute degree and low PageRank mean it lacks the prominence to coordinate global institutional flows.
+- **Community-Level Structural Profiles:**
+  - Distribution of Top 10% Nodes across communities: C0 (26), C1 (21), C2 (20), C4 (16), C3 (12), C5 (5), C6 (1), C7 (0), C8 (0), Isolates (0).
+  - High-boundary communities: Community 4 exhibits the highest mean cross-community fraction ($64.83\%$), housing major brokers like Node 160.
+  - Insular communities: Community 6 exhibits the lowest mean cross-community fraction ($27.80\%$), consistent with its lowest conductance ($0.2780$).
+- **Robustness Across Partitioning Variations:**
+  - Seed 123: Top 10% mean cross edges = 69.37 vs. 7.78 ($p = 7.76 \times 10^{-58}$), mean fraction = $57.06\%$ vs. $26.54\%$ ($p = 6.84 \times 10^{-35}$).
+  - Seed 2026: Top 10% mean cross edges = 69.21 vs. 7.79 ($p = 2.06 \times 10^{-57}$), mean fraction = $57.65\%$ vs. $27.27\%$ ($p = 1.63 \times 10^{-33}$).
+  - Resolution $\gamma = 0.8$: Top 10% mean cross edges = 52.88 vs. 5.61 ($p = 6.20 \times 10^{-59}$), mean fraction = $46.54\%$ vs. $21.05\%$ ($p = 2.40 \times 10^{-34}$).
+  - Resolution $\gamma = 1.2$: Top 10% mean cross edges = 77.89 vs. 10.37 ($p = 7.29 \times 10^{-56}$), mean fraction = $62.48\%$ vs. $32.96\%$ ($p = 3.65 \times 10^{-33}$).
+  - Conclusion: The finding that elite PageRank individuals disproportionately bridge communities is robust across all algorithmic seeds and resolution parameterizations.
+- **Generated Publication Figures:**
+  - `reports/figures/fig10_pagerank_vs_cross_fraction.{png,pdf}`: Scatter plot of PageRank vs. Cross-Community Fraction with case study callouts.
+  - `reports/figures/fig11_cross_connectivity_distributions.{png,pdf}`: Violin and box plots comparing Top 10% vs. Remaining 90% tiers.
+  - `reports/figures/fig12_community_profiles.{png,pdf}`: Community-level cross-boundary fraction and top-tier node allocation.
+- **Test Suite Status:** 41 passed in 5.51s (`tests/test_evaluation.py` and prior suites).
+- **Status:** Checkpoint 4 verified.
+

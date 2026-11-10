@@ -715,3 +715,227 @@ def plot_louvain_robustness(
 
     logger.info("Saved Louvain robustness plots to %s and %s", png_path, pdf_path)
     return png_path, pdf_path
+
+
+def plot_pagerank_vs_cross_community_fraction(
+    df: pd.DataFrame,
+    case_studies: Optional[Dict[str, pd.DataFrame]] = None,
+    output_dir: Optional[Path | str] = None,
+) -> Tuple[Path, Path]:
+    """Plot PageRank score vs Cross-Community Connection Fraction.
+
+    Figure 10: PageRank Centrality vs. Cross-Community Position.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_df = df.dropna(subset=["cross_community_fraction"]).copy()
+    top_101 = valid_df.head(101)
+    remaining = valid_df.iloc[101:]
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Remaining nodes
+    ax.scatter(
+        remaining["cross_community_fraction"],
+        remaining["pagerank"] * 1000,
+        color="#7f7f7f",
+        alpha=0.45,
+        s=25,
+        label="Remaining 90% Individuals (N=885)",
+    )
+
+    # Top 10% PageRank nodes
+    ax.scatter(
+        top_101["cross_community_fraction"],
+        top_101["pagerank"] * 1000,
+        color="#1f77b4",
+        alpha=0.85,
+        s=55,
+        edgecolors="black",
+        linewidth=0.7,
+        label="Top 10% PageRank Individuals (N=101)",
+    )
+
+    # Annotate key case study nodes if available
+    if case_studies:
+        bridge_df = case_studies.get("high_pr_bridge")
+        hub_df = case_studies.get("high_pr_hub")
+        periph_df = case_studies.get("peripheral_bridge")
+
+        if bridge_df is not None and not bridge_df.empty:
+            for _, r in bridge_df.head(2).iterrows():
+                ax.scatter(r["cross_community_fraction"], r["pagerank"] * 1000, color="#2ca02c", s=100, marker="*", edgecolors="black", zorder=5)
+                ax.annotate(f"N{int(r['node_id'])} (Global Spanner)", (r["cross_community_fraction"], r["pagerank"] * 1000), textcoords="offset points", xytext=(-25, 10), fontsize=8.5, weight="bold", color="#1b611b")
+
+        if hub_df is not None and not hub_df.empty:
+            for _, r in hub_df.head(2).iterrows():
+                ax.scatter(r["cross_community_fraction"], r["pagerank"] * 1000, color="#d62728", s=90, marker="D", edgecolors="black", zorder=5)
+                ax.annotate(f"N{int(r['node_id'])} (Internal Hub)", (r["cross_community_fraction"], r["pagerank"] * 1000), textcoords="offset points", xytext=(8, -12), fontsize=8.5, weight="bold", color="#8b0000")
+
+    ax.set_xlabel("Cross-Community Connection Fraction (Cross / Total Undirected Degree)", fontsize=11, weight="bold")
+    ax.set_ylabel(r"PageRank Score ($\times 10^{-3}$)", fontsize=11, weight="bold")
+    ax.set_title("PageRank Centrality vs. Cross-Community Connection Fraction\n(Distinguishing Global Boundary Spanners from Internal Cohesion Hubs)", fontsize=12, weight="bold")
+    ax.set_xlim(-0.02, 1.02)
+    ax.legend(loc="upper left", fontsize=10)
+    ax.grid(True, linestyle="--", alpha=0.5)
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig10_pagerank_vs_cross_fraction.png"
+    pdf_path = out_dir / "fig10_pagerank_vs_cross_fraction.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved PageRank vs cross fraction plot to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path
+
+
+def plot_cross_connectivity_distributions(
+    df: pd.DataFrame, output_dir: Optional[Path | str] = None
+) -> Tuple[Path, Path]:
+    """Plot boxplot comparison of cross-community edge counts and fractions for Top 10% vs. Remaining 90%.
+
+    Figure 11: Cross-Community Connectivity Comparison.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_df = df.dropna(subset=["cross_community_fraction"]).copy()
+    valid_df["Tier"] = ["Top 10% PageRank\n(N=101)" if i < 101 else "Remaining 90%\n(N=885)" for i in range(len(valid_df))]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+    palette = {"Top 10% PageRank\n(N=101)": "#1f77b4", "Remaining 90%\n(N=885)": "#e67e22"}
+
+    # Panel A: Absolute Cross-Community Edge Count
+    sns.boxplot(
+        data=valid_df,
+        x="Tier",
+        y="cross_community_count",
+        hue="Tier",
+        legend=False,
+        palette=palette,
+        ax=axes[0],
+        width=0.45,
+        fliersize=3,
+    )
+    axes[0].set_ylabel("Cross-Community Connections Count", fontsize=11, weight="bold")
+    axes[0].set_xlabel("")
+    axes[0].set_title("(a) Cross-Community Degree (Connections Count)", fontsize=11, weight="bold")
+    axes[0].grid(True, axis="y", linestyle="--", alpha=0.5)
+
+    # Panel B: Cross-Community Connection Fraction
+    sns.boxplot(
+        data=valid_df,
+        x="Tier",
+        y="cross_community_fraction",
+        hue="Tier",
+        legend=False,
+        palette=palette,
+        ax=axes[1],
+        width=0.45,
+        fliersize=3,
+    )
+    axes[1].set_ylabel("Cross-Community Connection Fraction", fontsize=11, weight="bold")
+    axes[1].set_xlabel("")
+    axes[1].set_title("(b) Cross-Community Connection Fraction", fontsize=11, weight="bold")
+    axes[1].set_ylim(-0.05, 1.05)
+    axes[1].grid(True, axis="y", linestyle="--", alpha=0.5)
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig11_cross_connectivity_distributions.png"
+    pdf_path = out_dir / "fig11_cross_connectivity_distributions.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved cross connectivity distributions to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path
+
+
+def plot_community_profiles(
+    summary_df: pd.DataFrame, output_dir: Optional[Path | str] = None
+) -> Tuple[Path, Path]:
+    """Plot community-level summary metrics (Conductance vs Mean PageRank and Department Diversity).
+
+    Figure 12: Community-Level Profile Summary.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Focus on non-trivial communities (size > 1)
+    non_trivial = summary_df[summary_df["size"] > 1].copy()
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+    # Panel A: Conductance vs Mean PageRank
+    scatter = axes[0].scatter(
+        non_trivial["conductance"],
+        non_trivial["mean_pagerank"] * 1000,
+        s=non_trivial["size"] * 2.5,
+        c=non_trivial["dominant_dept_fraction"] * 100,
+        cmap="viridis",
+        alpha=0.85,
+        edgecolors="black",
+        linewidth=1.0,
+    )
+    cbar = plt.colorbar(scatter, ax=axes[0])
+    cbar.set_label("Dominant Dept Share (%)", fontsize=10)
+
+    for _, r in non_trivial.iterrows():
+        axes[0].annotate(
+            f"C{int(r['comm_id'])} (N={int(r['size'])})",
+            (r["conductance"], r["mean_pagerank"] * 1000),
+            textcoords="offset points",
+            xytext=(6, 6),
+            fontsize=8.5,
+            weight="bold",
+        )
+
+    axes[0].set_xlabel("Community Conductance ($\phi$)", fontsize=11, weight="bold")
+    axes[0].set_ylabel(r"Mean PageRank ($\times 10^{-3}$)", fontsize=11, weight="bold")
+    axes[0].set_title("(a) Conductance vs. Mean PageRank\n(Bubble size = Community Membership)", fontsize=11, weight="bold")
+    axes[0].grid(True, linestyle="--", alpha=0.5)
+
+    # Panel B: Number of Departments Represented per Community
+    x = np.arange(len(non_trivial))
+    axes[1].bar(
+        x,
+        non_trivial["num_departments"],
+        color="#2b5c8f",
+        width=0.6,
+        edgecolor="black",
+        alpha=0.85,
+    )
+    for i, row in non_trivial.reset_index().iterrows():
+        axes[1].text(
+            i,
+            row["num_departments"] + 0.6,
+            f"{row['num_departments']}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+            weight="bold",
+        )
+
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels([f"C{int(cid)}" for cid in non_trivial["comm_id"]], fontsize=10)
+    axes[1].set_xlabel("Louvain Community", fontsize=11, weight="bold")
+    axes[1].set_ylabel("Distinct Departments Represented", fontsize=11, weight="bold")
+    axes[1].set_title("(b) Departmental Diversity Across Communities", fontsize=11, weight="bold")
+    axes[1].set_ylim(0, max(non_trivial["num_departments"]) + 4)
+    axes[1].grid(True, axis="y", linestyle="--", alpha=0.5)
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig12_community_profiles.png"
+    pdf_path = out_dir / "fig12_community_profiles.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved community profile plot to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path
