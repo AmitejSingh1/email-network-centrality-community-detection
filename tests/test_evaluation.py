@@ -9,6 +9,7 @@ import pytest
 from src.data_loader import load_email_network, create_analysis_graph
 from src.communities import create_undirected_projection, detect_louvain_communities
 from src.evaluation import (
+    analyze_degree_confounding,
     build_integrated_node_dataframe,
     compare_top_nodes_cross_connectivity,
     compute_community_level_summaries,
@@ -187,3 +188,32 @@ def test_real_dataset_integrated_robustness(real_integrated_data):
     for r, metrics in rob["resolution_comparisons"].items():
         assert metrics["top_10_mean_cross_count"] > 3.0 * metrics["rem_90_mean_cross_count"]
         assert metrics["top_10_mean_cross_fraction"] > 1.4 * metrics["rem_90_mean_cross_fraction"]
+
+
+def test_real_dataset_degree_confounding(real_integrated_data):
+    """Verify degree confounding analysis and stratified comparisons."""
+    _, _, _, _, df = real_integrated_data
+
+    conf = analyze_degree_confounding(df, n_strata=4)
+
+    assert conf["num_evaluated_nodes"] == 986
+
+    # 1. Bivariate correlations confirm strong degree confounding
+    biv = conf["bivariate_correlations"]
+    assert biv["pr_vs_degree"] > 0.90
+    assert biv["cross_count_vs_degree"] > 0.85
+    assert biv["cross_fraction_vs_degree"] > 0.50
+
+    # 2. Partial correlation controlling for degree attenuates global association
+    part = conf["partial_correlations"]
+    assert -0.25 < part["pr_vs_cross_count_given_degree"] < 0.05
+    assert -0.25 < part["pr_vs_cross_fraction_given_degree"] < 0.05
+
+    # 3. High-degree stratum Q4 deep-dive
+    q4 = conf["q4_comparison"]
+    assert q4["q4_total_nodes"] == 247
+    assert q4["top10_in_q4_fraction"] > 0.95  # 100 of 101 top PageRank nodes are in Q4
+    assert q4["q4_top10_mean_cross_count"] > 2.0 * q4["q4_rem_mean_cross_count"]
+    assert q4["q4_top10_mean_cross_fraction"] > q4["q4_rem_mean_cross_fraction"]
+    assert q4["q4_mann_whitney_fraction"]["p_value"] < 1e-5
+

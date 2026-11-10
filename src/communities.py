@@ -109,6 +109,11 @@ def evaluate_community_conductance(
     Conductance measures the ratio of cut edges crossing the community boundary
     to the minimum volume of the community and the rest of the network:
         \phi(S) = \frac{|\partial(S)|}{\min(\text{vol}(S), \text{vol}(V \setminus S))}
+    where \text{vol}(S) = \sum_{u \in S} d(u).
+
+    Note on interpretation: Conductance is the quotient of the cut size and community
+    volume, not the raw fraction of a community's links leaving the boundary (because
+    internal edges contribute twice to volume).
 
     Trivial communities (e.g. isolated nodes where vol(S) = 0) are excluded
     from conductance summaries.
@@ -266,6 +271,7 @@ def run_louvain_robustness(
 
     for gamma in resolutions:
         comms, n2c, q = detect_louvain_communities(G_undir, resolution=gamma, seed=42)
+        q_standard = float(nx.community.modularity(G_undir, comms, resolution=1.0))
         labels = [n2c[n] for n in nodes]
         res_partitions[gamma] = labels
         res_nmi = float(normalized_mutual_info_score(dept_labels, labels))
@@ -280,6 +286,8 @@ def run_louvain_robustness(
             "sizes": [len(c) for c in comms if len(c) > 1],
             "singletons_count": sum(1 for c in comms if len(c) == 1),
             "modularity": q,
+            "modularity_objective": q,
+            "modularity_standard": q_standard,
             "nmi": res_nmi,
             "ari": res_ari,
             "ari_with_res_1_0": agreement_with_base,

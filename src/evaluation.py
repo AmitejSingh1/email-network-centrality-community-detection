@@ -281,3 +281,128 @@ def run_integrated_robustness(
     results["resolution_comparisons"] = res_comparisons
 
     return results
+
+
+def analyze_degree_confounding(
+    df: pd.DataFrame, n_strata: int = 4
+) -> Dict[str, Any]:
+    """Assess whether PageRank provides information about cross-community connectivity beyond degree.
+
+    Evaluates bivariate rank correlations, partial rank correlations controlling for
+    total undirected degree, and degree-stratified comparisons across degree quartiles.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Integrated node DataFrame from build_integrated_node_dataframe.
+    n_strata : int
+        Number of degree strata (default 4 = quartiles).
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary of bivariate correlations, partial correlations controlling for degree,
+        degree quartile profiles, and within-Q4 elite comparisons.
+    """
+    valid_df = df[df["total_undirected_degree"] > 0].copy()
+
+    # 1. Bivariate Spearman correlations
+    deg = valid_df["total_undirected_degree"]
+    pr = valid_df["pagerank"]
+    indeg = valid_df["in_degree"]
+    cross_cnt = valid_df["cross_community_count"]
+    cross_frac = valid_df["cross_community_fraction"]
+
+    bivariate = {
+        "pr_vs_degree": float(stats.spearmanr(pr, deg).statistic),
+        "indeg_vs_degree": float(stats.spearmanr(indeg, deg).statistic),
+        "cross_count_vs_degree": float(stats.spearmanr(cross_cnt, deg).statistic),
+        "cross_fraction_vs_degree": float(stats.spearmanr(cross_frac, deg).statistic),
+        "pr_vs_cross_count": float(stats.spearmanr(pr, cross_cnt).statistic),
+        "pr_vs_cross_fraction": float(stats.spearmanr(pr, cross_frac).statistic),
+        "indeg_vs_cross_count": float(stats.spearmanr(indeg, cross_cnt).statistic),
+        "indeg_vs_cross_fraction": float(stats.spearmanr(indeg, cross_frac).statistic),
+    }
+
+    # 2. Partial Spearman correlation controlling for total undirected degree:
+    # r_{xy.z} = (r_{xy} - r_{xz} * r_{yz}) / sqrt((1 - r_{xz}^2) * (1 - r_{yz}^2))
+    def _calc_partial_spearman(x, y, z):
+        rx = stats.rankdata(x)
+        ry = stats.rankdata(y)
+        rz = stats.rankdata(z)
+        r_xy = stats.pearsonr(rx, ry).statistic
+        r_xz = stats.pearsonr(rx, rz).statistic
+        r_yz = stats.pearsonr(ry, rz).statistic
+        num = r_xy - r_xz * r_yz
+        denom = np.sqrt(max(1e-12, (1 - r_xz**2) * (1 - r_yz**2)))
+        return float(num / denom)
+
+    partial_correlations = {
+        "pr_vs_cross_count_given_degree": _calc_partial_spearman(pr, cross_cnt, deg),
+        "pr_vs_cross_fraction_given_degree": _calc_partial_spearman(pr, cross_frac, deg),
+        "indeg_vs_cross_count_given_degree": _calc_partial_spearman(indeg, cross_cnt, deg),
+        "indeg_vs_cross_fraction_given_degree": _calc_partial_spearman(indeg, cross_frac, deg),
+    }
+
+    # 3. Stratified analysis across degree quartiles
+    labels = [f"Q{i+1}" for i in range(n_strata)]
+    valid_df["degree_stratum"] = pd.qcut(deg, q=n_strata, labels=labels)
+
+    strata_results: Dict[str, Dict[str, Any]] = {}
+    for stratum_name, grp in valid_df.groupby("degree_stratum", observed=False):
+        n_grp = len(grp)
+        d_min, d_max = int(grp["total_undirected_degree"].min()), int(grp["total_undirected_degree"].max())
+        rho_cnt = float(stats.spearmanr(grp["pagerank"], grp["cross_community_count"]).statistic)
+        rho_frc = float(stats.spearmanr(grp["pagerank"], grp["cross_community_fraction"]).statistic)
+
+        med_pr = grp["pagerank"].median()
+        high_pr = grp[grp["pagerank"] >= med_pr]
+        low_pr = grp[grp["pagerank"] < med_pr]
+
+        strata_results[str(stratum_name)] = {
+            "sample_size": n_grp,
+            "degree_min": d_min,
+            "degree_max": d_max,
+            "spearman_pr_vs_cross_count": rho_cnt,
+            "spearman_pr_vs_cross_fraction": rho_frc,
+            "high_pr_mean_cross_count": float(high_pr["cross_community_count"].mean()),
+            "low_pr_mean_cross_count": float(low_pr["cross_community_count"].mean()),
+            "high_pr_mean_cross_fraction": float(high_pr["cross_community_fraction"].mean()),
+            "low_pr_mean_cross_fraction": float(low_pr["cross_community_fraction"].mean()),
+        }
+
+    # 4. Deep-dive into highest-degree stratum (Q4)
+    q4_df = valid_df[valid_df["degree_stratum"] == "Q4"]
+    q4_top10 = q4_df[q4_df["pagerank_rank_unique"] <= 101]
+    q4_rem = q4_df[q4_df["pagerank_rank_unique"] > 101]
+
+    u_frc, p_frc = stats.mannwhitneyu(
+        q4_top10["cross_community_fraction"], q4_rem["cross_community_fraction"]
+    )
+    u_cnt, p_cnt = stats.mannwhitneyu(
+        q4_top10["cross_community_count"], q4_rem["cross_community_count"]
+    )
+
+    q4_comparison = {
+        "q4_total_nodes": len(q4_df),
+        "q4_top10_nodes_count": len(q4_top10),
+        "q4_remaining_nodes_count": len(q4_rem),
+        "top10_in_q4_fraction": float(len(q4_top10) / 101),  # Fraction of top 10% residing in Q4
+        "q4_top10_mean_degree": float(q4_top10["total_undirected_degree"].mean()),
+        "q4_rem_mean_degree": float(q4_rem["total_undirected_degree"].mean()),
+        "q4_top10_mean_cross_count": float(q4_top10["cross_community_count"].mean()),
+        "q4_rem_mean_cross_count": float(q4_rem["cross_community_count"].mean()),
+        "q4_top10_mean_cross_fraction": float(q4_top10["cross_community_fraction"].mean()),
+        "q4_rem_mean_cross_fraction": float(q4_rem["cross_community_fraction"].mean()),
+        "q4_mann_whitney_fraction": {"u_stat": float(u_frc), "p_value": float(p_frc)},
+        "q4_mann_whitney_count": {"u_stat": float(u_cnt), "p_value": float(p_cnt)},
+    }
+
+    return {
+        "num_evaluated_nodes": len(valid_df),
+        "bivariate_correlations": bivariate,
+        "partial_correlations": partial_correlations,
+        "strata_results": strata_results,
+        "q4_comparison": q4_comparison,
+    }
+

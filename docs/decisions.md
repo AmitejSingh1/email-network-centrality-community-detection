@@ -30,6 +30,11 @@
 - **Choice:** Compute an exact analytical reference baseline $p_{\text{null}} = \sum_d S_d(S_d - 1) / [N(N - 1)] \approx 4.67\%$. Compare empirical within-department fraction against $p_{\text{null}}$ to compute the homophily enrichment factor ($7.43\times$).
 - **Caution:** Clearly label this as an unconstrained uniform random baseline rather than a degree-preserving stub-matching configuration model. It serves as a benchmark for departmental concentration without implying organizational causality.
 
+## Decision 1.3: Directed Reciprocity Definition and Edge Decomposition
+- **Context:** Reciprocity is commonly defined as the proportion of directed edges that belong to a mutual pair: $r = |\{(u, v) \in E \mid (v, u) \in E\}| / |E|$.
+- **Choice:** Standardize on NetworkX's definition ($r = 0.7112$ in $G_{\text{analysis}}$, $0.6934$ in $G_{\text{raw}}$). Explicitly document that $G_{\text{analysis}}$ contains exactly 8,865 reciprocal pairs ($17,730$ directed edges, $71.12\%$) and 7,199 unreciprocated directed edges ($28.88\%$).
+- **Rationale:** Clarifies the complement relationship ($71.12\% + 28.88\% = 100\%$) and avoids confusing reciprocity with the unreciprocated edge fraction.
+
 ## Decision 2.1: Deterministic Centrality Ranking and Tie-Handling Convention
 - **Context:** Discrete in-degree integers frequently produce identical degree ties across different nodes.
 - **Choice:** Maintain two ranking representations in `src/centrality.py`:
@@ -51,6 +56,11 @@
 - **Context:** Louvain discovers 9 non-trivial communities with modularity $Q = 0.413$, compared to the 42 formal departments with $Q = 0.288$.
 - **Interpretation Rule:** Do not interpret higher Louvain modularity as proof that discovered communities are "superior" or "ground truth" organizational units. Modularity is directly optimized by Louvain by construction. The comparison demonstrates that organic communication reorganizes the 42 administrative units into larger cross-departmental communication alliances.
 
+## Decision 3.3: Mathematical Definition of Conductance and Modularity Convention Across Resolutions
+- **Context:** Conductance is sometimes informally described as the fraction of cut links. Furthermore, varying the Louvain resolution parameter $\gamma$ optimizes a resolution-dependent objective $Q_\gamma$.
+- **Choice:** Explicitly document conductance as $\phi(S) = |\partial(S)| / \min(\text{vol}(S), \text{vol}(V \setminus S))$ where $\text{vol}(S) = \sum_{u \in S} d(u)$, noting that internal edges contribute twice to volume. For resolution sensitivity, report both the optimization objective $Q_\gamma$ and standard modularity $Q_{\text{standard}}$ evaluated at $\gamma = 1.0$.
+- **Rationale:** Ensures consistent benchmark comparisons and makes clear that standard modularity is maximized at $\gamma = 1.0$ ($Q = 0.4130$) while $Q_\gamma$ shifts monotonically due to the null-model penalty weight.
+
 ## Decision 4.1: Dual Formulation of Cross-Community Connectivity and Handling of Isolates
 - **Context:** Examining whether prominent individuals act as boundary spanners requires measuring their connectivity across community boundaries. Relying solely on raw count favors high-degree nodes; relying solely on fraction overemphasizes peripheral nodes with one out-of-community link (100% fraction). Furthermore, isolated nodes have degree 0.
 - **Choice:** Evaluate both `cross_community_count` and `cross_community_fraction = cross_community_count / degree` on the undirected projection $G_{\text{undirected}}$. For isolated nodes with degree 0 (the 19 singletons), set `cross_community_count = 0` and `cross_community_fraction = NaN` (strictly omitted from fractional distributions without imputing 0 or 1).
@@ -60,6 +70,12 @@
 - **Context:** Comparing the Top 10% PageRank tier against the Remaining 90% yields $p < 10^{-50}$ on the two-sample Mann-Whitney U test.
 - **Choice:** Explicitly document that network nodes violate the i.i.d. assumption underlying classical inferential statistics due to dyadic dependence, structural equivalence, and homophily.
 - **Rationale:** The Mann-Whitney U test and Spearman p-values are reported strictly as descriptive indicators of large distributional separation, not as rigorous hypothesis tests confirming statistical independence or causal institutional authority.
+
+## Decision 4.3: Methodological Treatment of Degree Confounding and Non-Causal Structural Archetypes
+- **Context:** PageRank and total degree are highly correlated ($\rho_s = 0.9614$), as are total degree and cross-community count ($\rho_s = 0.9155$). We must establish whether PageRank provides information about cross-community connectivity beyond simple degree.
+- **Choice:** Implement partial rank correlation controlling for total undirected degree and degree-stratified quartile analysis. Interpret individual case studies (Nodes 160, 451, 644) strictly as descriptive structural archetypes.
+- **Rationale:** Controlling globally for degree attenuates rank correlation ($\rho_s \approx -0.18$) because internal endorsement concentration (as in Node 451) yields high PageRank without boundary spanning. However, within the high-degree tier (Q4, degree $\ge 45$), Top 10% PageRank nodes exhibit significantly higher cross-community count (68.56 vs. 25.17) and fraction (56.34% vs. 41.30%), demonstrating that PageRank distinguishes broad multi-cluster brokers from internal hubs among well-connected nodes. Case studies are explicitly labeled as structural archetypes rather than verified organizational roles.
+
 
 
 

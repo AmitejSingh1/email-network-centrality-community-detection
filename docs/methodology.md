@@ -63,13 +63,13 @@ $$Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \right] \delta(
 - **Primary Louvain Parameters:** NetworkX 3.4.2 `louvain_communities()`, resolution $\gamma = 1.0$, random seed = 42, weight = None.
 - **Community Conductance ($\phi(S)$):**
   $$\phi(S) = \frac{|\partial(S)|}{\min(\text{vol}(S), \text{vol}(V \setminus S))}$$
-  where $\partial(S) = \{\{u, v\} \in E \mid u \in S, v \notin S\}$ and $\text{vol}(S) = \sum_{u \in S} d(u)$. Evaluated for all non-trivial communities with $\text{vol}(S) > 0$. Singletons with zero edges are documented as mathematically undefined.
+  where $\partial(S) = \{\{u, v\} \in E \mid u \in S, v \notin S\}$ and $\text{vol}(S) = \sum_{u \in S} d(u)$. Evaluated for all non-trivial communities with $\text{vol}(S) > 0$. Conductance is the quotient of the cut size and community volume (not the raw fraction of links leaving the set, since internal edges contribute twice to volume). Singletons with zero edges are documented as mathematically undefined.
 - **External Department Comparison:**
   - Normalized Mutual Information (NMI) and Adjusted Rand Index (ARI) evaluate partition concordance between Louvain community assignments and the 42 official department labels.
   - Baseline Department Modularity: Modularity of the formal 42-department partition ($Q_{\text{dept}}$) evaluated on the identical $G_{\text{undirected}}$ topology.
 - **Robustness Checks:**
   - Seed stability across 5 random seeds: $[42, 123, 2026, 7, 99]$ evaluated via pairwise ARI.
-  - Resolution sensitivity: $\gamma \in \{0.8, 1.0, 1.2\}$ to assess community granularity and departmental convergence.
+  - Resolution sensitivity: $\gamma \in \{0.8, 1.0, 1.2\}$ to assess community granularity and departmental convergence. In reporting, we distinguish the resolution-dependent objective $Q_\gamma$ optimized by Louvain from standard Newman modularity evaluated at $\gamma = 1.0$, demonstrating that standard modularity is maximized at $\gamma = 1.0$.
 
 
 ### Integrated Metric: Cross-Community Connectivity
@@ -82,4 +82,21 @@ $$\text{CrossCommunityFraction}(v) = \frac{|\{u \in N(v) \mid c_u \neq c_v\}|}{d
   - Nodes are partitioned into the Top 10% PageRank tier ($N = 101$, representing elite prominence) and the Remaining 90% tier ($N = 904$).
   - Two-sample comparisons use descriptive statistics (mean, median, standard deviation) and the non-parametric Mann-Whitney U test.
   - **Network Dependence Limitation:** Standard inferential hypothesis tests (such as Mann-Whitney U or independent-samples tests) assume independent and identically distributed (i.i.d.) observations. Because nodes embedded in an email network violate independence through topological interdependence and edge reciprocity, reported p-values are treated as descriptive indicators of distributional separation rather than formal causal proofs.
+
+
+### Degree Confounding and Stratified Analysis
+Because total degree strongly correlates with PageRank ($\rho_s = 0.9614$) and cross-community count ($\rho_s = 0.9155$), we control for degree to determine whether PageRank provides additional structural information beyond simple node connectivity:
+1. **Partial Spearman Rank Correlation:**
+   $$r_{xy \cdot z} = \frac{r_{xy} - r_{xz} r_{yz}}{\sqrt{(1 - r_{xz}^2)(1 - r_{yz}^2)}}$$
+   where ranks of $x$ (PageRank), $y$ (Cross Count or Fraction), and $z$ (Total Degree) are evaluated.
+2. **Degree Stratification:** Nodes are partitioned into degree quartiles (Q1 to Q4). Within each stratum, we evaluate rank correlations and compare high- vs. low-PageRank subsets.
+3. **High-Degree Stratum (Q4) Elite Separation:** We evaluate whether the Top 10% PageRank tier maintains a cross-boundary advantage when compared strictly against other high-degree nodes ($d \ge 45$).
+
+
+### Descriptive Structural Archetypes (Case Studies)
+To provide grounded qualitative interpretability without attributing formal organizational authority, we analyze three descriptive structural archetypes:
+1. **Global Boundary Spanner (Node 160):** High PageRank, high total degree, high cross-community fraction, spanning multiple distinct clusters.
+2. **Internal Community Hub / Endorsement Trap (Node 451):** High PageRank, low total degree, zero cross-community connections, receiving concentrated endorsements within a dense internal community.
+3. **Peripheral Bridge (Node 644):** Low PageRank, low degree, high cross-community fraction, bridging locally between small clusters but lacking network-wide prominence.
+
 

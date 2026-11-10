@@ -200,3 +200,19 @@ def test_real_dataset_louvain_robustness(real_undirected_graph):
     res_08_comms = len(rob["resolution_results"][0.8]["sizes"])
     res_12_comms = len(rob["resolution_results"][1.2]["sizes"])
     assert res_08_comms <= res_12_comms
+
+    # Verify distinction between modularity objective and standard modularity (gamma=1.0)
+    for gamma in (0.8, 1.0, 1.2):
+        res_dict = rob["resolution_results"][gamma]
+        assert "modularity_objective" in res_dict
+        assert "modularity_standard" in res_dict
+        assert 0.35 <= res_dict["modularity_objective"] <= 0.50
+        assert 0.35 <= res_dict["modularity_standard"] <= 0.45
+
+    # Standard modularity is maximized at gamma=1.0
+    q_std_08 = rob["resolution_results"][0.8]["modularity_standard"]
+    q_std_10 = rob["resolution_results"][1.0]["modularity_standard"]
+    q_std_12 = rob["resolution_results"][1.2]["modularity_standard"]
+    assert q_std_10 >= q_std_08
+    assert q_std_10 >= q_std_12
+

@@ -203,3 +203,35 @@ def test_real_dataset_exploratory_metrics(real_graphs):
     assert comp["cross_dept_fraction"] == pytest.approx(16284 / 24929, rel=1e-4)
     assert comp["homophily_enrichment_ratio"] > 7.0  # Greater than 7x enrichment over uniform random
 
+
+def test_real_dataset_reciprocity_identities(real_graphs):
+    """Verify directed reciprocity calculations and edge-level decomposition on Email-Eu-core."""
+    G_raw, G_analysis = real_graphs
+
+    recip_stats = compute_reciprocity_statistics(G_raw)
+
+    # G_raw reciprocity: 17,730 / 25,571 = 0.69336...
+    assert 0.693 < recip_stats["reciprocity_with_self_loops"] < 0.694
+
+    # G_analysis reciprocity: 17,730 / 24,929 = 0.71122...
+    assert 0.711 < recip_stats["reciprocity_no_self_loops"] < 0.712
+    assert recip_stats["num_self_loops"] == 642
+
+    # Exact pair counts in G_analysis
+    assert recip_stats["num_reciprocal_pairs_no_self"] == 8865
+    assert recip_stats["num_reciprocal_directed_edges_no_self"] == 17730
+    assert recip_stats["num_unreciprocated_directed_edges_no_self"] == 7199
+
+    # Partition identity: reciprocal + unreciprocated = total edges (24,929)
+    assert (
+        recip_stats["num_reciprocal_directed_edges_no_self"]
+        + recip_stats["num_unreciprocated_directed_edges_no_self"]
+        == 24929
+    )
+
+    # Fractions sum to exactly 1.0
+    recip_frac = recip_stats["reciprocity_no_self_loops"]
+    unrecip_frac = recip_stats["unreciprocated_fraction_no_self"]
+    assert abs((recip_frac + unrecip_frac) - 1.0) < 1e-9
+
+

@@ -38,7 +38,10 @@
   | **WCCs (Count / Giant)** | 20 / 986 nodes | 20 / 986 nodes |
   | **SCCs (Count / Giant)** | 203 / 803 nodes | 203 / 803 nodes |
   | **Zero-Degree Nodes** | 0 | 19 (the 19 singletons preserved with labels) |
-  | **Overall Reciprocity** | $0.2974$ | $0.2801$ (interpersonal pairs) |
+  | **Directed Reciprocity** | $0.6934$ ($17,730 / 25,571$) | $0.7112$ ($17,730 / 24,929$) |
+  | **Reciprocal Pairs** | 8,865 pairs ($17,730$ directed edges) | 8,865 pairs ($17,730$ directed edges) |
+  | **Unreciprocated Edges** | 7,841 directed edges ($30.66\%$) | 7,199 directed edges ($28.88\%$) |
+- **Reciprocity Clarification:** Standard NetworkX reciprocity $r = |\{(u,v) \in E \mid (v,u) \in E\}| / |E|$ is $0.7112$ ($71.12\%$) for $G_{\text{analysis}}$ and $0.6934$ ($69.34\%$) for $G_{\text{raw}}$. The unreciprocated directed edge fraction is $28.88\%$ ($7,199 / 24,929$). Note: An earlier summary draft inadvertently recorded unreciprocated edge proportions ($0.2974$ / $0.2801$); the true graph reciprocity is $71.12\%$.
 - **Degree Distribution Findings ($G_{\text{analysis}}$):**
   - In-degree: Mean = 24.80, Std = 27.77, Median = 17.0, Min = 0, Max = 211. Percentiles: P25 = 5.0, P75 = 35.0, P95 = 81.8.
   - Out-degree: Mean = 24.80, Std = 33.12, Median = 14.0, Min = 0, Max = 333. Percentiles: P25 = 1.0, P75 = 34.0, P95 = 88.0.
@@ -108,9 +111,10 @@
 - **Community Quality Metrics:**
   - Modularity ($Q_{\text{Louvain}}$): **$0.4130$** (indicates strong internal density relative to degree-product null model).
   - Conductance ($\phi(S)$ across 9 non-trivial communities):
+    - Exact Definition: $\phi(S) = |\partial(S)| / \min(\text{vol}(S), \text{vol}(V \setminus S))$ where $\text{vol}(S) = \sum_{u \in S} d(u)$. It is the quotient of the cut size and community volume (measuring boundary cut relative to total node degrees in the set; not the percentage of links, since internal edges contribute twice to volume).
     - Mean: $0.4475$
     - Median: $0.4201$
-    - Min: $0.2780$ (Community 6, tightest boundary with only 27.8% boundary cut)
+    - Min: $0.2780$ (Community 6, tightest boundary with cut-to-volume ratio of 0.2780)
     - Max: $0.6719$ (Community 8, size 10)
     - Conductance for the 19 singletons is mathematically undefined (volume = 0, cut = 0).
 - **Department Partition Baseline Comparison (on identical $G_{\text{undirected}}$):**
@@ -143,10 +147,10 @@
   - Pairwise ARI across all 10 seed pairs: Min = $0.6906$, Max = $0.9415$, Mean = **$0.7975$**.
   - Conclusion: Discovered community macro-structure is highly robust to algorithm stochasticity.
 - **Resolution Parameter Sensitivity ($\gamma \in [0.8, 1.0, 1.2]$ at seed = 42):**
-  - $\gamma = 0.8$: 6 non-trivial communities + 19 singletons, $Q = 0.4590$, $NMI = 0.5272$, $ARI = 0.2223$, $ARI(\text{vs } \gamma=1.0) = 0.6245$.
-  - $\gamma = 1.0$: 9 non-trivial communities + 19 singletons, $Q = 0.4130$, $NMI = 0.5946$, $ARI = 0.3505$, $ARI(\text{vs } \gamma=1.0) = 1.0000$.
-  - $\gamma = 1.2$: 10 non-trivial communities + 19 singletons, $Q = 0.3830$, $NMI = 0.6247$, $ARI = 0.4321$, $ARI(\text{vs } \gamma=1.0) = 0.7618$.
-  - Observation: As resolution increases from 0.8 to 1.2, modularity decreases while NMI and ARI relative to departments increase, demonstrating that higher resolution fractures macro-communities into finer groups that align more closely with smaller departmental units.
+  - $\gamma = 0.8$: 6 non-trivial communities + 19 singletons, Optimization Objective $Q_{0.8} = 0.4590$, Standard Modularity $Q_{\text{standard}} (\gamma=1.0) = 0.4105$, $NMI = 0.5272$, $ARI = 0.2223$, $ARI(\text{vs } \gamma=1.0) = 0.6245$.
+  - $\gamma = 1.0$: 9 non-trivial communities + 19 singletons, Optimization Objective $Q_{1.0} = 0.4130$, Standard Modularity $Q_{\text{standard}} (\gamma=1.0) = 0.4130$, $NMI = 0.5946$, $ARI = 0.3505$, $ARI(\text{vs } \gamma=1.0) = 1.0000$.
+  - $\gamma = 1.2$: 10 non-trivial communities + 19 singletons, Optimization Objective $Q_{1.2} = 0.3830$, Standard Modularity $Q_{\text{standard}} (\gamma=1.0) = 0.4051$, $NMI = 0.6247$, $ARI = 0.4321$, $ARI(\text{vs } \gamma=1.0) = 0.7618$.
+  - Evaluation Convention Clarification: We distinguish the resolution-dependent objective $Q_\gamma$ optimized by Louvain from standard modularity evaluated at $\gamma = 1.0$. Standard modularity is maximized at $\gamma = 1.0$ ($0.4130$), whereas $Q_\gamma$ decreases monotonically ($0.4590 \to 0.4130 \to 0.3830$) due to the null-model penalty factor $\gamma$. As resolution increases, higher penalty fractures macro-communities into finer groups that align more closely with smaller departmental units (increasing NMI and ARI).
 - **Generated Publication Figures:**
   - `reports/figures/fig7_community_sizes.{png,pdf}`: Ranked Louvain community size distribution.
   - `reports/figures/fig8_department_community_heatmap.{png,pdf}`: Department-community contingency matrix heatmap.
@@ -174,33 +178,52 @@
     - Remaining 90% ($N = 885$): Mean = **$26.56\%$** ($0.2656$), Std = $0.2443$, Median = **$25.00\%$** ($0.2500$), Min = $0.00\%$, Max = $100.00\%$.
     - Ratio of Means: **$> 2.1\times$** higher proportion of ties directed across community boundaries.
     - Two-sample Mann-Whitney U test: $U = 77,532.0, p = 5.25 \times 10^{-35}$.
-- **Correlation Analysis:**
-  - PageRank vs. Cross-Community Edge Count: Spearman $\rho_s = \mathbf{0.9419}$ ($p < 10^{-300}$).
-  - PageRank vs. Cross-Community Edge Fraction: Spearman $\rho_s = \mathbf{0.5842}$ ($p = 7.42 \times 10^{-90}$).
-  - In-Degree vs. Cross-Community Edge Count: Spearman $\rho_s = 0.9631$.
-  - In-Degree vs. Cross-Community Edge Fraction: Spearman $\rho_s = 0.6030$.
-- **Archetypal Case Studies:**
+- **Correlation Analysis & Degree Confounding Assessment:**
+  - Bivariate Spearman correlations (on $N = 986$ non-isolated nodes):
+    - PageRank vs. Total Undirected Degree: $\rho_s = \mathbf{0.9614}$ ($p < 10^{-300}$).
+    - In-Degree vs. Total Undirected Degree: $\rho_s = \mathbf{0.9793}$ ($p < 10^{-300}$).
+    - Total Undirected Degree vs. Cross-Community Count: $\rho_s = \mathbf{0.9155}$ ($p < 10^{-300}$).
+    - Total Undirected Degree vs. Cross-Community Fraction: $\rho_s = \mathbf{0.5857}$ ($p = 2.45 \times 10^{-91}$).
+    - PageRank vs. Cross-Community Count: $\rho_s = \mathbf{0.8602}$ on non-isolates ($\mathbf{0.9419}$ across all 1,005 nodes).
+    - PageRank vs. Cross-Community Fraction: $\rho_s = \mathbf{0.5230}$ on non-isolates ($\mathbf{0.5842}$ across all 1,005 nodes).
+  - Partial Spearman Rank Correlations Controlling for Total Undirected Degree:
+    - $\text{Partial } r(\text{PageRank}, \text{Cross Count} \mid \text{Degree}) = \mathbf{-0.1803}$.
+    - $\text{Partial } r(\text{PageRank}, \text{Cross Fraction} \mid \text{Degree}) = \mathbf{-0.1798}$.
+    - $\text{Partial } r(\text{In-Degree}, \text{Cross Count} \mid \text{Degree}) = \mathbf{-0.0403}$.
+    - $\text{Partial } r(\text{In-Degree}, \text{Cross Fraction} \mid \text{Degree}) = \mathbf{-0.0710}$.
+  - Degree-Stratified Analysis across Quartiles ($N = 986$):
+    - **Q1 (Low: 1–6 edges, $N = 247$):** Spearman(PR, Cross Count) = $0.3690$, Spearman(PR, Cross Fraction) = $0.3173$.
+    - **Q2 (Med-Low: 7–22 edges, $N = 252$):** Spearman(PR, Cross Count) = $0.1411$, Spearman(PR, Cross Fraction) = $-0.1287$.
+    - **Q3 (Med-High: 23–44 edges, $N = 240$):** Spearman(PR, Cross Count) = $0.1767$, Spearman(PR, Cross Fraction) = $0.0059$.
+    - **Q4 (High: 45–345 edges, $N = 247$):** Spearman(PR, Cross Count) = $\mathbf{0.7044}$ ($p = 2.45 \times 10^{-38}$), Spearman(PR, Cross Fraction) = $\mathbf{0.4307}$ ($p = 1.41 \times 10^{-12}$).
+  - High-Degree Stratum (Q4) Elite Separation:
+    - **Concentration:** 100 of the 101 Top 10% PageRank nodes ($99.0\%$) reside in Q4. (The sole exception is Node 451 in Q2, degree = 13).
+    - Within Q4, comparing Top 10% PageRank nodes ($N = 100$) vs. Remaining Q4 nodes ($N = 147$):
+      - Mean Cross-Community Connections Count: **68.56** vs. **25.17** ($2.72\times$ higher, Mann-Whitney $U = 13,327.0, p = 2.10 \times 10^{-27}$).
+      - Mean Cross-Community Fraction: **$56.34\%$** vs. **$41.30\%$** ($+15.0$ percentage points, Mann-Whitney $U = 11,146.5, p = 5.69 \times 10^{-12}$).
+  - Methodological Interpretation: Total degree is the primary driver of gross cross-community count. Across the whole network, controlling globally for degree attenuates the correlation between PageRank and boundary fraction ($\rho_s \approx -0.18$) because receiving concentrated endorsements from dense internal nodes (such as Node 451) boosts PageRank without boundary spanning. However, within the high-degree tier (Q4), PageRank effectively distinguishes broad multi-cluster brokers (like Node 160) from internal community hubs.
+- **Descriptive Structural Archetypes (Case Studies):**
   1. **Global Boundary Spanner (Node 160):**
      - Department 36, Louvain Community 4.
      - PageRank Score = $0.007495$ (Rank 1 overall), In-Degree = 211 (Rank 1).
-     - Total Undirected Degree = 345 (Internal = 51, Cross-Community = 294).
+     - Total Undirected Degree = 345 (Internal in C4 = 51, Cross-Community = 294).
      - Cross-Community Fraction = **$85.22\%$**.
-     - Distinct Communities Spanned = **8** (communicates with every non-trivial community except C8).
-     - Interpretation: Node 160 serves as the primary organizational backbone connecting disparate communication clusters across the institution.
+     - Distinct External Communities Spanned = **8** ([0, 1, 2, 3, 5, 6, 7, 8] - connects to every non-trivial community).
+     - Structural Role: Archetypal boundary spanner connecting across disparate topological clusters.
   2. **Internal Community Hub (Node 451):**
      - Department 14, Louvain Community 6.
-     - PageRank Score = $0.003067$ (Rank 37 overall), In-Degree = 8 (Rank 659, $\Delta R = +622$).
-     - Total Undirected Degree = 13 (Internal = 13, Cross-Community = 0).
+     - PageRank Score = $0.003117$ (Rank 37 overall), In-Degree = 8 (Rank 659, $\Delta R = +622$).
+     - Total Undirected Degree = 13 (Internal in C6 = 13, Cross-Community = 0).
      - Cross-Community Fraction = **$0.00\%$**.
-     - Distinct Communities Spanned = 0.
-     - Interpretation: Demonstrates that high PageRank does not guarantee boundary spanning. Node 451 owes its elevated status to concentrated inward endorsements within Community 6.
+     - Distinct External Communities Spanned = 0.
+     - Structural Role: Archetypal internal hub / endorsement trap. Demonstrates that high PageRank does not guarantee boundary spanning. Its status is generated by concentrated endorsements within Community 6.
   3. **Peripheral Bridge (Node 644):**
      - Department 25, Louvain Community 7.
-     - PageRank Score = $0.000572$ (Rank 633 overall), In-Degree = 11 (Rank 602).
-     - Total Undirected Degree = 15 (Internal = 2, Cross-Community = 13).
+     - PageRank Score = $0.000514$ (Rank 633 overall), In-Degree = 11 (Rank 606).
+     - Total Undirected Degree = 15 (Internal in C7 = 2, Cross-Community = 13).
      - Cross-Community Fraction = **$86.67\%$**.
-     - Distinct Communities Spanned = 4.
-     - Interpretation: Illustrates why fraction alone is misleading. While $86.7\%$ of its connections leave Community 7, its low absolute degree and low PageRank mean it lacks the prominence to coordinate global institutional flows.
+     - Distinct External Communities Spanned = **5** ([0, 2, 3, 4, 5]).
+     - Structural Role: Archetypal peripheral bridge. Demonstrates that a high cross-community fraction alone does not confer institutional prominence; its low absolute degree and low PageRank mean it does not coordinate institutional communication.
 - **Community-Level Structural Profiles:**
   - Distribution of Top 10% Nodes across communities: C0 (26), C1 (21), C2 (20), C4 (16), C3 (12), C5 (5), C6 (1), C7 (0), C8 (0), Isolates (0).
   - High-boundary communities: Community 4 exhibits the highest mean cross-community fraction ($64.83\%$), housing major brokers like Node 160.
