@@ -522,3 +522,196 @@ def plot_pagerank_sensitivity(
 
     logger.info("Saved PageRank sensitivity plots to %s and %s", png_path, pdf_path)
     return png_path, pdf_path
+
+
+def plot_louvain_community_sizes(
+    communities: List[Set[int]], output_dir: Optional[Path | str] = None
+) -> Tuple[Path, Path]:
+    """Plot ranked size distribution of discovered Louvain communities.
+
+    Figure 7: Louvain Community Size Distribution.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    non_trivial = [len(c) for c in communities if len(c) > 1]
+    singletons_count = sum(1 for c in communities if len(c) == 1)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    x = np.arange(len(non_trivial) + 1)
+    heights = non_trivial + [singletons_count]
+    labels = [f"C{i} ({sz})" for i, sz in enumerate(non_trivial)] + [f"Singletons\n(19 nodes)"]
+
+    colors = ["#2b5c8f"] * len(non_trivial) + ["#7f7f7f"]
+    bars = ax.bar(x, heights, color=colors, width=0.65, edgecolor="black", linewidth=0.8)
+
+    for bar, h in zip(bars, heights):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            h + 3,
+            str(h),
+            ha="center",
+            va="bottom",
+            fontsize=9,
+            weight="bold",
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=35, ha="right", fontsize=9)
+    ax.set_ylabel("Number of Members")
+    ax.set_title(
+        f"Discovered Louvain Communication Communities (N = 1,005 Members)\n"
+        f"({len(non_trivial)} Non-Trivial Communities + 19 Peripheral Singletons, Resolution $\\gamma = 1.0$)"
+    )
+    ax.set_ylim(0, max(heights) + 25)
+    ax.grid(True, axis="y", linestyle="--", alpha=0.5)
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig7_community_sizes.png"
+    pdf_path = out_dir / "fig7_community_sizes.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved community size distribution to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path
+
+
+def plot_department_community_contingency(
+    contingency_df: pd.DataFrame, output_dir: Optional[Path | str] = None
+) -> Tuple[Path, Path]:
+    """Plot department-community contingency matrix heatmap.
+
+    Figure 8: Department-Community Contingency Heatmap.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Focus on non-trivial communities (columns with size > 1)
+    non_trivial_cols = [c for c in contingency_df.columns if contingency_df[c].sum() > 1]
+    matrix = contingency_df[non_trivial_cols].copy()
+
+    # Sort departments by their dominant community, then by department size descending
+    dominant_comm = matrix.idxmax(axis=1)
+    dept_sizes = matrix.sum(axis=1)
+    sorted_depts = pd.DataFrame({"dominant": dominant_comm, "size": dept_sizes}).sort_values(
+        by=["dominant", "size"], ascending=[True, False]
+    ).index
+
+    sorted_matrix = matrix.loc[sorted_depts]
+
+    fig, ax = plt.subplots(figsize=(11, 10))
+
+    sns.heatmap(
+        sorted_matrix,
+        cmap="YlGnBu",
+        annot=True,
+        fmt="d",
+        cbar_kws={"label": "Member Count"},
+        linewidths=0.5,
+        linecolor="#e0e0e0",
+        ax=ax,
+    )
+
+    ax.set_xlabel("Discovered Louvain Community (Ranked by Size)", fontsize=11, weight="bold")
+    ax.set_ylabel("Formal Department ID (Grouped by Dominant Community)", fontsize=11, weight="bold")
+    ax.set_title(
+        "Department-Community Contingency Matrix\n"
+        "(Rows: 42 Formal Departments; Columns: Discovered Louvain Communities)",
+        fontsize=12,
+        weight="bold",
+    )
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig8_department_community_heatmap.png"
+    pdf_path = out_dir / "fig8_department_community_heatmap.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved department-community contingency heatmap to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path
+
+
+def plot_louvain_robustness(
+    robustness_data: Dict[str, Any], output_dir: Optional[Path | str] = None
+) -> Tuple[Path, Path]:
+    """Plot Louvain stability across random seeds and resolution sensitivity.
+
+    Figure 9: Louvain Robustness and Resolution Sensitivity.
+    """
+    out_dir = Path(output_dir) if output_dir else DEFAULT_FIG_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    seeds = robustness_data["seeds"]
+    resolutions = robustness_data["resolutions"]
+    res_results = robustness_data["resolution_results"]
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
+
+    # Panel A: Pairwise ARI Matrix across Seeds
+    n_seeds = len(seeds)
+    ari_matrix = np.ones((n_seeds, n_seeds))
+    for i in range(n_seeds):
+        for j in range(i + 1, n_seeds):
+            s1, s2 = seeds[i], seeds[j]
+            key = f"seed_{s1}_vs_seed_{s2}"
+            val = robustness_data["pairwise_seed_ari"].get(key, 0.0)
+            ari_matrix[i, j] = val
+            ari_matrix[j, i] = val
+
+    seed_labels = [f"Seed {s}" for s in seeds]
+    sns.heatmap(
+        ari_matrix,
+        annot=True,
+        fmt=".3f",
+        cmap="Blues",
+        vmin=0.6,
+        vmax=1.0,
+        xticklabels=seed_labels,
+        yticklabels=seed_labels,
+        cbar_kws={"label": "Adjusted Rand Index (ARI)"},
+        ax=axes[0],
+    )
+    axes[0].set_title("(a) Partition Stability Across Random Seeds (ARI at $\\gamma=1.0$)")
+
+    # Panel B: Resolution Sensitivity (Modularity and Communities Count)
+    res_vals = list(resolutions)
+    mods = [res_results[r]["modularity"] for r in res_vals]
+    n_comms = [len(res_results[r]["sizes"]) for r in res_vals]  # Non-trivial communities
+
+    color_mod = "#1f77b4"
+    color_comm = "#d62728"
+
+    ax_b1 = axes[1]
+    line1 = ax_b1.plot(res_vals, mods, marker="o", color=color_mod, linewidth=2, label="Modularity Q")
+    ax_b1.set_xlabel("Resolution Parameter ($\gamma$)", fontsize=11, weight="bold")
+    ax_b1.set_ylabel("Modularity $Q$", color=color_mod, fontsize=11, weight="bold")
+    ax_b1.tick_params(axis="y", labelcolor=color_mod)
+    ax_b1.set_ylim(0.35, 0.48)
+
+    ax_b2 = ax_b1.twinx()
+    line2 = ax_b2.plot(res_vals, n_comms, marker="s", color=color_comm, linewidth=2, linestyle="--", label="Non-Trivial Communities")
+    ax_b2.set_ylabel("Number of Non-Trivial Communities", color=color_comm, fontsize=11, weight="bold")
+    ax_b2.tick_params(axis="y", labelcolor=color_comm)
+    ax_b2.set_ylim(4, 16)
+    ax_b2.grid(False)
+
+    lines = line1 + line2
+    labels_leg = [l.get_label() for l in lines]
+    ax_b1.legend(lines, labels_leg, loc="center right")
+    ax_b1.set_title("(b) Effect of Resolution Parameter on Granularity & Modularity")
+
+    plt.tight_layout()
+
+    png_path = out_dir / "fig9_louvain_robustness.png"
+    pdf_path = out_dir / "fig9_louvain_robustness.pdf"
+    plt.savefig(png_path)
+    plt.savefig(pdf_path)
+    plt.close()
+
+    logger.info("Saved Louvain robustness plots to %s and %s", png_path, pdf_path)
+    return png_path, pdf_path

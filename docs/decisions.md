@@ -41,5 +41,16 @@
 - **Context:** In $G_{\text{raw}}$, a singleton node with a self-loop acts as a sink that circulates $85\%$ of its mass back into itself, achieving $PR \approx 0.001209$ (rank 380 out of 1,005). An individual who never communicated with anyone else is artificially elevated above $62\%$ of the institution.
 - **Choice:** By removing self-loops in $G_{\text{analysis}}$, singleton nodes become true dangling nodes, correctly placing them at the bottom of the prominence distribution ($PR \approx 0.0001976$, rank 987 out of 1,005).
 
+## Decision 3.1: Unweighted Undirected Projection for Louvain Modularity Optimization
+- **Context:** Standard Louvain (Lecture 7) optimizes modularity under a symmetric adjacency matrix assumption. Directed modularity exists but is less standard and alters the definition of community boundaries.
+- **Choice:** Construct an unweighted undirected graph $G_{\text{undirected}}$ from $G_{\text{analysis}}$, collapsing reciprocal edges into a single undirected edge $\{u, v\}$.
+- **Information Trade-off:** Direction of communication and reciprocity strength are collapsed into binary reachability. However, this preserves the fundamental topological density of interaction while enabling direct application of modularity and conductance benchmarks.
+- **Preservation of Isolates:** All 1,005 nodes are preserved. The 19 isolated singletons naturally form 19 single-node communities without distorting the non-trivial communication clusters.
+
+## Decision 3.2: Objective Comparison against Department Baseline
+- **Context:** Louvain discovers 9 non-trivial communities with modularity $Q = 0.413$, compared to the 42 formal departments with $Q = 0.288$.
+- **Interpretation Rule:** Do not interpret higher Louvain modularity as proof that discovered communities are "superior" or "ground truth" organizational units. Modularity is directly optimized by Louvain by construction. The comparison demonstrates that organic communication reorganizes the 42 administrative units into larger cross-departmental communication alliances.
+
+
 
 

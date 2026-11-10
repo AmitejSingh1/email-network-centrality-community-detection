@@ -42,7 +42,6 @@
 - **Degree Distribution Findings ($G_{\text{analysis}}$):**
   - In-degree: Mean = 24.80, Std = 27.77, Median = 17.0, Min = 0, Max = 211. Percentiles: P25 = 5.0, P75 = 35.0, P95 = 81.8.
   - Out-degree: Mean = 24.80, Std = 33.12, Median = 14.0, Min = 0, Max = 333. Percentiles: P25 = 1.0, P75 = 34.0, P95 = 88.0.
-  - Asymmetry: Heavy right-tail behavior with significant asymmetry between broadcast capability (max out-degree 333) and inbound contact volume (max in-degree 211).
 - **Departmental Structure and Edge Composition:**
   - 42 departments. Size range: Min = 1 (Dept 30), Max = 109 (Dept 14), Mean = 23.93, Median = 14.5.
   - Within-department directed communication links: 8,645 ($34.68\%$).
@@ -62,44 +61,95 @@
 - **Date:** 2026-11-11
 - **Substrate Graph:** $G_{\text{analysis}}$ (1,005 nodes, 24,929 directed interpersonal edges, zero self-loops).
 - **PageRank Parameters:** NetworkX 3.4.2 `nx.pagerank()`, $\alpha = 0.85$, $\text{tol} = 10^{-6}$, $\text{max\_iter} = 500$, uniform personalization, standard dangling redistribution.
-- **Scores Verification:** Min = $0.0001976$ (isolated singletons), Max = $0.007495$ (Node 160), $\sum PR = 1.000000$ ($\pm 10^{-6}$), finite and non-negative across all 1,005 nodes.
 - **Top 5 Prominent Nodes:**
   1. Node 160 (Dept 36): $PR = 0.007495$ (PR Rank 1), In-Degree = 211 (In-Degree Rank 1).
   2. Node 62 (Dept 36): $PR = 0.005897$ (PR Rank 2), In-Degree = 178 (In-Degree Rank 2).
   3. Node 86 (Dept 36): $PR = 0.005711$ (PR Rank 3), In-Degree = 153 (In-Degree Rank 5).
   4. Node 107 (Dept 36): $PR = 0.005568$ (PR Rank 4), In-Degree = 168 (In-Degree Rank 3).
   5. Node 121 (Dept 36): $PR = 0.005232$ (PR Rank 5), In-Degree = 156 (In-Degree Rank 4).
-  *Note:* All top 5 most prominent nodes belong to Department 36.
-- **Centrality Correlation:**
-  - Spearman rank correlation between PageRank and In-Degree: $\rho_s = 0.9828$ ($p < 10^{-300}$).
-  - While monotonic alignment is high overall, notable structural disagreements occur due to incoming link topology.
-- **Top-$k$ Overlap ($|\text{TopK}_{PR} \cap \text{TopK}_{InDeg}| / k$):**
-  - $k = 10$: $9 / 10 = 90.0\%$ (Jaccard = $0.818$). Disagreement: Node 5 in PR Top-10 (PR Rank 6, In-Deg Rank 13); Node 128 in In-Deg Top-10 (In-Deg Rank 10, PR Rank 11).
-  - $k = 20$: $17 / 20 = 85.0\%$ (Jaccard = $0.739$).
-  - $k = 50$: $46 / 50 = 92.0\%$ (Jaccard = $0.852$).
-- **Structural Disagreement Analysis:**
-  - **PageRank-Boosted Case (Node 451, Dept 14):**
-    - In-degree = 8 (Rank 659 out of 1,005 — bottom third).
-    - PageRank = $0.00307$ (Rank 37 out of 1,005 — top 4%).
-    - Rank difference: $+622$ positions.
-    - Structural Cause: Receives an email from Node 365 (Dept 14), who has an out-degree of 1 ($L(365)=1$) and a high PageRank ($PR = 0.00306$, Rank 39). Node 365 concentrates $100\%$ of their outgoing probability mass directly into Node 451.
-  - **In-Degree-Boosted Case (Node 83, Dept 17):**
-    - In-degree = 85 (Rank 45).
-    - PageRank Rank = 56.
-    - Structural Cause: Receives emails from high-volume broadcasters whose average out-degree is $79.1$ (median 65.0). Senders dilute their endorsement across dozens of individuals, giving a mean contribution of only $3.35 \times 10^{-5}$ per sender ($12.8\times$ smaller than Node 451's senders).
-- **Damping Factor Sensitivity ($d \in \{0.75, 0.85, 0.95\}$):**
-  - Pairwise Spearman correlation: $\rho_s(0.75, 0.85) = 0.9991$, $\rho_s(0.85, 0.95) = 0.9988$, $\rho_s(0.75, 0.95) = 0.9961$.
-  - Top-$k$ Overlap with $d=0.85$:
-    - $d = 0.75$: Top-10 = $90\%$, Top-20 = $100\%$, Top-50 = $96\%$.
-    - $d = 0.95$: Top-10 = $100\%$, Top-20 = $95\%$, Top-50 = $96\%$.
-  - Conclusion: Prominence rankings are exceptionally robust to choice of damping factor.
-- **Self-Loop Robustness Check ($G_{\text{raw}}$ vs. $G_{\text{analysis}}$ at $d=0.85$):**
-  - Spearman rank correlation: $\rho_s = 0.8732$ ($p < 10^{-314}$).
-  - Top-$k$ overlap: Top-10 = $70.0\%$ (7/10), Top-20 = $80.0\%$ (16/20), Top-50 = $90.0\%$ (45/50).
-  - Key finding: In $G_{\text{raw}}$, 19 peripheral singletons loop $85\%$ of their mass back to themselves, artificially inflating their PageRank from $0.0001976$ (rank 987) to $0.001209$ (rank 380). Excluding self-loops corrects this distortion.
+- **Centrality Correlation:** Spearman rank correlation between PageRank and In-Degree: $\rho_s = 0.9828$ ($p < 10^{-300}$).
+- **Top-$k$ Overlaps:** Top-10 = $90.0\%$ ($J=0.818$), Top-20 = $85.0\%$ ($J=0.739$), Top-50 = $92.0\%$ ($J=0.852$).
+- **Structural Disagreements:**
+  - PageRank-Boosted (Node 451, Dept 14): In-degree = 8 (Rank 659) vs. PR = $0.00307$ (Rank 37), $\Delta R = +622$. Senders include Node 365 ($PR = 0.00306$, Rank 39, Out-degree = 1), transferring $100\%$ of endorsement mass directly to Node 451.
+  - In-Degree-Boosted (Node 83, Dept 17): In-degree = 85 (Rank 45) vs. PR Rank 56. Receives links from broadcasters with mean out-degree $79.1$, diluting incoming endorsements ($12.8\times$ smaller contribution per link).
+- **Damping Factor Sensitivity ($d \in \{0.75, 0.85, 0.95\}$):** High pairwise stability ($\rho_s > 0.996$; top-$k$ overlap $\ge 90\%$).
+- **Self-Loop Robustness Check:** $\rho_s = 0.8732$ between $G_{\text{raw}}$ and $G_{\text{analysis}}$. Self-loops in $G_{\text{raw}}$ artificially elevated 19 peripheral singletons from rank 987 to rank 380 via reflexive trapping.
 - **Generated Publication Figures:**
-  - `reports/figures/fig4_pagerank_vs_indegree.{png,pdf}`: Scatter and rank-rank plot with highlighted structural disagreement cases.
-  - `reports/figures/fig5_top_ranked_comparison.{png,pdf}`: Slopegraph comparing top-20 individuals under both measures.
-  - `reports/figures/fig6_pagerank_sensitivity.{png,pdf}`: Bump chart tracking top-15 node rank trajectories and top-$k$ overlap bar chart across $d \in \{0.75, 0.85, 0.95\}$.
-- **Test Suite Status:** 26 passed in 2.10s (`tests/test_data_loader.py`, `tests/test_graph_analysis.py`, and `tests/test_centrality.py`).
+  - `reports/figures/fig4_pagerank_vs_indegree.{png,pdf}`
+  - `reports/figures/fig5_top_ranked_comparison.{png,pdf}`
+  - `reports/figures/fig6_pagerank_sensitivity.{png,pdf}`
+- **Test Suite Status:** 26 passed in 2.10s.
 - **Status:** Checkpoint 2 verified.
+
+---
+
+## Experiment EXP-03: Checkpoint 3 — Louvain Community Detection & Department Alignment
+- **Date:** 2026-11-11
+- **Substrate Graph:** $G_{\text{undirected}}$ constructed from $G_{\text{analysis}}$:
+  - Nodes: 1,005 (100% preserved, including 19 isolated singletons with degree 0).
+  - Undirected edges: 16,064.
+  - Reciprocal directed links collapsed: 8,865 pairs ($17,730$ directed edges, $71.12\%$ of all directed edges).
+  - Unreciprocated directed links: 7,199 ($28.88\%$).
+- **Louvain Community Detection Results ($\gamma = 1.0, \text{seed} = 42$):**
+  - Discovered communities: 28 total.
+  - Community breakdown: 9 non-trivial cohesive communities + 19 peripheral singletons.
+  - Sizes of non-trivial communities:
+    - C0: 190 members
+    - C1: 157 members
+    - C2: 145 members
+    - C3: 127 members
+    - C4: 125 members
+    - C5: 109 members
+    - C6: 91 members
+    - C7: 32 members
+    - C8: 10 members
+    - C9–C27: 19 singletons of size 1 (the 19 isolated institution members).
+  - Size summary: Min = 1, Max = 190, Mean = 35.89, Median = 1.0 (Non-trivial: Min = 10, Max = 190, Mean = 109.56, Median = 125.0).
+- **Community Quality Metrics:**
+  - Modularity ($Q_{\text{Louvain}}$): **$0.4130$** (indicates strong internal density relative to degree-product null model).
+  - Conductance ($\phi(S)$ across 9 non-trivial communities):
+    - Mean: $0.4475$
+    - Median: $0.4201$
+    - Min: $0.2780$ (Community 6, tightest boundary with only 27.8% boundary cut)
+    - Max: $0.6719$ (Community 8, size 10)
+    - Conductance for the 19 singletons is mathematically undefined (volume = 0, cut = 0).
+- **Department Partition Baseline Comparison (on identical $G_{\text{undirected}}$):**
+  - Modularity ($Q_{\text{dept}}$): **$0.2880$** (substantially lower than Louvain modularity $0.4130$).
+  - Conductance across 42 departments:
+    - Mean: $0.7871$
+    - Median: $0.8644$
+    - Min: $0.3010$ (Dept 3)
+    - Max: $1.0000$ (Multiple small departments have 100% boundary leakage)
+  - Key Insight: Formal departments exhibit severe boundary leakage (median conductance $0.864$), whereas Louvain discovers groups with substantially sharper communication boundaries (median conductance $0.420$).
+- **External Agreement with Ground-Truth Department Labels:**
+  - Normalized Mutual Information (NMI): **$0.5946$** ($\approx 0.595$).
+  - Adjusted Rand Index (ARI): **$0.3505$** ($\approx 0.351$).
+  - Interpretation: There is moderate mutual information between departments and communication communities ($NMI \approx 0.595$), but partition agreement is partial ($ARI \approx 0.351$). Organic communication does not rigidly respect administrative lines; instead, communication groups consolidate multiple departments or fracture departments across several communication communities.
+- **Department 36 Investigation (Top 5 PageRank Nodes):**
+  - Department 36 has 22 total members.
+  - Dominant Community: 18 of 22 members ($81.82\%$) belong to Community 0 (size 190).
+  - Placement of Top 5 PageRank Individuals:
+    - Node 62 (Rank 2): Community 0
+    - Node 107 (Rank 4): Community 0
+    - Node 121 (Rank 5): Community 0
+    - Node 86 (Rank 3): Community 1
+    - Node 160 (Rank 1): **Community 4!**
+  - Critical Observation: The #1 ranked node in the institution (Node 160) does not belong to the dominant community of Department 36 (Community 0); rather, it is anchored in Community 4. This reveals that the most prominent individuals bridge across community boundaries.
+- **Random Seed Robustness ($\text{seeds} \in [42, 123, 2026, 7, 99]$ at $\gamma = 1.0$):**
+  - Modularity range: $0.4125$ to $0.4166$ ($\Delta Q < 0.0042$).
+  - Number of non-trivial communities: 8 or 9 across all runs.
+  - NMI range: $0.5910$ to $0.6014$.
+  - ARI range: $0.3254$ to $0.3615$.
+  - Pairwise ARI across all 10 seed pairs: Min = $0.6906$, Max = $0.9415$, Mean = **$0.7975$**.
+  - Conclusion: Discovered community macro-structure is highly robust to algorithm stochasticity.
+- **Resolution Parameter Sensitivity ($\gamma \in [0.8, 1.0, 1.2]$ at seed = 42):**
+  - $\gamma = 0.8$: 6 non-trivial communities + 19 singletons, $Q = 0.4590$, $NMI = 0.5272$, $ARI = 0.2223$, $ARI(\text{vs } \gamma=1.0) = 0.6245$.
+  - $\gamma = 1.0$: 9 non-trivial communities + 19 singletons, $Q = 0.4130$, $NMI = 0.5946$, $ARI = 0.3505$, $ARI(\text{vs } \gamma=1.0) = 1.0000$.
+  - $\gamma = 1.2$: 10 non-trivial communities + 19 singletons, $Q = 0.3830$, $NMI = 0.6247$, $ARI = 0.4321$, $ARI(\text{vs } \gamma=1.0) = 0.7618$.
+  - Observation: As resolution increases from 0.8 to 1.2, modularity decreases while NMI and ARI relative to departments increase, demonstrating that higher resolution fractures macro-communities into finer groups that align more closely with smaller departmental units.
+- **Generated Publication Figures:**
+  - `reports/figures/fig7_community_sizes.{png,pdf}`: Ranked Louvain community size distribution.
+  - `reports/figures/fig8_department_community_heatmap.{png,pdf}`: Department-community contingency matrix heatmap.
+  - `reports/figures/fig9_louvain_robustness.{png,pdf}`: Seed stability ARI heatmap and resolution sensitivity curve.
+- **Test Suite Status:** 34 passed in 4.23s.
+- **Status:** Checkpoint 3 verified.

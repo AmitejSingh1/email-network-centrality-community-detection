@@ -51,11 +51,26 @@ $$PR(v) = \frac{1 - d}{|V|} + d \sum_{u \in In(v)} \frac{PR(u)}{Out(u)} + d \sum
 
 
 ### Algorithm Class 2: Louvain Modularity Optimization (Lecture 7)
-Louvain optimizes modularity on the unweighted undirected projection of the communication graph:
+Louvain optimizes modularity on an unweighted undirected projection $G_{\text{undirected}}$ derived from $G_{\text{analysis}}$:
 $$Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \right] \delta(c_i, c_j)$$
-- Primary parameters: Resolution $\gamma = 1.0$, random seed = 42.
-- Evaluation metrics: Modularity $Q$, conductance $\phi(S)$, Normalized Mutual Information (NMI), and Adjusted Rand Index (ARI) against department labels.
-- Robustness: Multiple random seeds (42, 123, 2026, 7, 99) and resolution checks ($\gamma \in \{0.8, 1.0, 1.2\}$).
+- **Undirected Projection Mechanics:**
+  - $G_{\text{analysis}}$ contains $24,929$ directed communication links across $1,005$ nodes.
+  - Collapsing reciprocal directed links $(u, v)$ and $(v, u)$ yields exactly $16,064$ undirected edges ($\{u, v\}$).
+  - 8,865 reciprocal pairs ($17,730$ directed links, $71.12\%$ of all directed edges) collapse into $8,865$ undirected edges.
+  - 7,199 unreciprocated directed links ($28.88\%$) map to $7,199$ undirected edges.
+  - All 1,005 nodes are preserved, including the 19 degree-0 isolated nodes.
+  - **Information Lost:** Converting to an unweighted undirected graph discards communication asymmetry (who initiated the communication), volume of reciprocity (unreciprocated ties are given equal weight to mutual ties), and temporal/causal flow direction.
+- **Primary Louvain Parameters:** NetworkX 3.4.2 `louvain_communities()`, resolution $\gamma = 1.0$, random seed = 42, weight = None.
+- **Community Conductance ($\phi(S)$):**
+  $$\phi(S) = \frac{|\partial(S)|}{\min(\text{vol}(S), \text{vol}(V \setminus S))}$$
+  where $\partial(S) = \{\{u, v\} \in E \mid u \in S, v \notin S\}$ and $\text{vol}(S) = \sum_{u \in S} d(u)$. Evaluated for all non-trivial communities with $\text{vol}(S) > 0$. Singletons with zero edges are documented as mathematically undefined.
+- **External Department Comparison:**
+  - Normalized Mutual Information (NMI) and Adjusted Rand Index (ARI) evaluate partition concordance between Louvain community assignments and the 42 official department labels.
+  - Baseline Department Modularity: Modularity of the formal 42-department partition ($Q_{\text{dept}}$) evaluated on the identical $G_{\text{undirected}}$ topology.
+- **Robustness Checks:**
+  - Seed stability across 5 random seeds: $[42, 123, 2026, 7, 99]$ evaluated via pairwise ARI.
+  - Resolution sensitivity: $\gamma \in \{0.8, 1.0, 1.2\}$ to assess community granularity and departmental convergence.
+
 
 ### Integrated Metric: Cross-Community Connectivity
 For each individual node $v$ in undirected graph $G$:
