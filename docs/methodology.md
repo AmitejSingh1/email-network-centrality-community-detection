@@ -17,7 +17,20 @@ To what extent do communication communities align with formal department boundar
 - **Entities:** 1,005 anonymized members ($V = \{0, 1, \dots, 1004\}$).
 - **Communication Links:** 25,571 directed edges $(u, v)$ where person $u$ sent at least one email to person $v$.
 - **Department Labels:** Ground-truth department memberships mapping each node to one of 42 departments ($0$ to $41$).
-- **Graph Invariant Rule:** The universe of nodes is defined by the complete department-label mapping ($|V| = 1,005$). Nodes with zero observed edges are retained as valid institution members.
+- **Dual Graph Representations:**
+  - $G_{\text{raw}}$: Original directed graph containing all 1,005 nodes and 25,571 directed edges (including 642 self-loops).
+  - $G_{\text{analysis}}$: Cleaned directed graph containing all 1,005 nodes and 24,929 directed interpersonal edges (self-loops removed). The 19 nodes that only had self-loops are preserved with in-degree = 0, out-degree = 0, and their valid department attributes. This is the primary representation for PageRank, community detection, and cross-community analysis.
+- **Directed Density Formulas:**
+  - Raw density (with self-loops permitted):
+    $$\rho_{\text{raw}} = \frac{|E|}{|V|^2} = \frac{25,571}{1,005^2} \approx 0.025317 \quad \left(\text{or } \frac{|E|}{|V|(|V|-1)} = \frac{25,571}{1,009,020} \approx 0.025342\right)$$
+  - Analysis density (strictly interpersonal directed pairs):
+    $$\rho_{\text{analysis}} = \frac{|E_{\text{interpersonal}}|}{|V|(|V|-1)} = \frac{24,929}{1,005 \times 1,004} = \frac{24,929}{1,009,020} \approx 0.024706$$
+- **Uniform Random Ordered-Pair Reference Model (Department Baseline):**
+  Holding empirical department sizes $S_d$ ($d \in \{0, \dots, 41\}$) fixed, the expected fraction of edges falling within the same department under a uniform random allocation across all ordered pairs $(u, v)$ with $u \neq v$ is:
+  $$p_{\text{null}} = \frac{\sum_{d=0}^{41} S_d(S_d - 1)}{|V|(|V| - 1)} = \frac{47,088}{1,009,020} \approx 0.046667 \quad (4.67\%)$$
+  Empirical within-department communication ($34.68\%$) is evaluated against $p_{\text{null}}$ to determine the homophily enrichment ratio:
+  $$\text{Enrichment} = \frac{f_{\text{within}}}{p_{\text{null}}} = \frac{0.346785}{0.046667} \approx 7.43\times$$
+
 
 ---
 

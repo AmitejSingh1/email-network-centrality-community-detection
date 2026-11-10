@@ -319,3 +319,34 @@ def load_email_network(
     }
 
     return G, verification_summary
+
+
+def create_analysis_graph(G_raw: nx.DiGraph) -> nx.DiGraph:
+    """Derive the primary analysis graph by removing self-loops from G_raw.
+
+    Preserves all nodes, their attributes, and directed edge relationships
+    between distinct individuals. Peripheral singletons that previously only had
+    a self-loop are retained as isolated (degree 0) nodes.
+
+    Parameters
+    ----------
+    G_raw : nx.DiGraph
+        Raw directed email graph (contains 1,005 nodes and 25,571 directed edges).
+
+    Returns
+    -------
+    nx.DiGraph
+        Analysis graph G_analysis (contains 1,005 nodes and 24,929 directed edges).
+    """
+    G_analysis = G_raw.copy()
+    self_loops = list(nx.selfloop_edges(G_analysis))
+    G_analysis.remove_edges_from(self_loops)
+
+    # Invariant checks
+    if G_analysis.number_of_nodes() != G_raw.number_of_nodes():
+        raise RuntimeError("Node count altered during self-loop removal.")
+    if nx.number_of_selfloops(G_analysis) != 0:
+        raise RuntimeError("Failed to remove all self-loops.")
+
+    return G_analysis
+

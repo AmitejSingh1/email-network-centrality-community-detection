@@ -20,3 +20,14 @@
 - **Choice:** The primary directed graph maintains all 25,571 edges as provided by SNAP (including the 642 self-loops), ensuring exact reproduction of SNAP edge counts. In exploratory and algorithm phases, we explicitly report metrics both with and without self-loops to clearly differentiate interpersonal communication from reflexive activity.
 - **Rationale:** Preserving self-loops in raw representation maintains raw data fidelity, while distinguishing them during analysis prevents skewing community detection and PageRank dynamics.
 
+## Decision 1.1: Maintenance of Dual Graph Representations (G_raw vs. G_analysis)
+- **Context:** Self-loops represent an individual emailing themselves (e.g. personal notes, draft storage, automated calendar echoes) rather than interpersonal exchange. Retaining 642 self-loops inflates within-department communication counts and introduces artificial self-endorsement loops in PageRank.
+- **Choice:** Explicitly instantiate `G_raw` (1,005 nodes, 25,571 edges) for baseline auditing and exact SNAP reproduction, and `G_analysis` (1,005 nodes, 24,929 edges) as the primary graph for all subsequent algorithms.
+- **Preservation of Zero-Degree Nodes:** When self-loops are removed, the 19 singleton nodes become degree-0 nodes in `G_analysis`. They are strictly retained with their ground-truth department labels. In standard PageRank, degree-0 nodes receive teleportation probability $(1 - d)/N$ and do not distribute probability outwards, correctly reflecting their complete isolation from interpersonal email flows.
+
+## Decision 1.2: Departmental Comparison against Uniform Random Ordered-Pair Reference Model
+- **Context:** An empirical within-department communication fraction (e.g. 34.7%) cannot be interpreted in a vacuum without knowing what fraction would be expected purely by chance given the uneven department size distribution.
+- **Choice:** Compute an exact analytical reference baseline $p_{\text{null}} = \sum_d S_d(S_d - 1) / [N(N - 1)] \approx 4.67\%$. Compare empirical within-department fraction against $p_{\text{null}}$ to compute the homophily enrichment factor ($7.43\times$).
+- **Caution:** Clearly label this as an unconstrained uniform random baseline rather than a degree-preserving stub-matching configuration model. It serves as a benchmark for departmental concentration without implying organizational causality.
+
+
