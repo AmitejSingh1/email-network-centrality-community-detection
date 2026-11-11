@@ -175,24 +175,24 @@ def make_fig2():
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.5), dpi=300)
     fig.subplots_adjust(wspace=0.46, left=0.08, right=0.96, top=0.88, bottom=0.18)
 
-    # Panel a: Top 12 departments bar chart
+    # Panel a: Top 10 departments bar chart
     dept_sizes = pd.Series(list(node_departments.values())).value_counts().sort_values(ascending=False)
-    top12 = dept_sizes.head(12)
+    top10 = dept_sizes.head(10)
 
-    labels = [f"D{d}" for d in top12.index]
-    vals = list(top12.values)
+    labels = [f"D{d}" for d in top10.index]
+    vals = list(top10.values)
 
-    bars = axes[0].bar(range(len(labels)), vals, color="#2B6CB0", edgecolor="#1A365D", linewidth=0.6, width=0.65)
+    bars = axes[0].bar(range(len(labels)), vals, color="#2B6CB0", edgecolor="#1A365D", linewidth=0.6, width=0.62)
     for bar in bars:
         h = bar.get_height()
-        axes[0].text(bar.get_x() + bar.get_width()/2.0, h + 1.5, f"{h}", ha="center", va="bottom", fontsize=7.0, weight="bold")
+        axes[0].text(bar.get_x() + bar.get_width()/2.0, h + 1.5, f"{h}", ha="center", va="bottom", fontsize=7.5, weight="bold")
 
     axes[0].axhline(dept_sizes.median(), color="#DD6B20", linestyle="--", linewidth=1.1, label=f"Median = {dept_sizes.median():.1f}")
     axes[0].set_xticks(range(len(labels)))
-    axes[0].set_xticklabels(labels, fontsize=7.5, weight="bold")
-    axes[0].set_xlabel("Department Identifier (Top 12)", fontsize=8.5, weight="bold", labelpad=3)
+    axes[0].set_xticklabels(labels, fontsize=8.0, weight="bold")
+    axes[0].set_xlabel("Department Identifier (Top 10)", fontsize=8.5, weight="bold", labelpad=3)
     axes[0].set_ylabel("Affiliated Members", fontsize=8.5, weight="bold", labelpad=3)
-    axes[0].set_title("(a) Department Size Distribution", fontsize=9.5, weight="bold", pad=5)
+    axes[0].set_title("(a) Top 10 Department Populations", fontsize=9.5, weight="bold", pad=5)
     axes[0].set_ylim(0, 125)
     axes[0].tick_params(axis="both", labelsize=8.0)
     axes[0].legend(loc="upper right", fontsize=7.5, frameon=True, framealpha=0.92, edgecolor="#CBD5E0")
@@ -277,17 +277,17 @@ def make_fig3():
     axes[0].set_ylim(-0.2, 8.2)
     axes[0].grid(True, linestyle=":", alpha=0.6)
 
-    # Panel b: Top 15 PageRank rank shifts
-    top15 = cent_df.head(15).copy().sort_values(by="pagerank_rank_unique", ascending=False)
-    y_pos = np.arange(len(top15))
-    shift_colors = ["#38A169" if s >= 0 else "#E53E3E" for s in top15["rank_difference"]]
+    # Panel b: Top 10 PageRank rank shifts
+    top10_pr = cent_df.head(10).copy().sort_values(by="pagerank_rank_unique", ascending=False)
+    y_pos = np.arange(len(top10_pr))
+    shift_colors = ["#38A169" if s >= 0 else "#E53E3E" for s in top10_pr["rank_difference"]]
 
-    axes[1].barh(y_pos, top15["rank_difference"], color=shift_colors, edgecolor="#1A202C", linewidth=0.5, height=0.65)
+    axes[1].barh(y_pos, top10_pr["rank_difference"], color=shift_colors, edgecolor="#1A202C", linewidth=0.5, height=0.60)
     axes[1].axvline(0, color="#1A202C", linestyle="-", linewidth=0.8)
     axes[1].set_yticks(y_pos)
-    axes[1].set_yticklabels([f"Node {nid} (PR #{r})" for nid, r in zip(top15["node_id"], top15["pagerank_rank_unique"])], fontsize=7.0, weight="bold")
+    axes[1].set_yticklabels([f"Node {nid} (PR #{r})" for nid, r in zip(top10_pr["node_id"], top10_pr["pagerank_rank_unique"])], fontsize=7.5, weight="bold")
     axes[1].set_xlabel("Rank Shift ΔR (In-Degree Rank − PR Rank)", fontsize=8.5, weight="bold", labelpad=3)
-    axes[1].set_title("(b) Top-15 PageRank Rank Shifts", fontsize=9.5, weight="bold", pad=5)
+    axes[1].set_title("(b) Top-10 PageRank Rank Shifts", fontsize=9.5, weight="bold", pad=5)
     axes[1].tick_params(axis="x", labelsize=8.0)
     axes[1].grid(True, axis="x", linestyle=":", alpha=0.6)
 

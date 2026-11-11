@@ -278,8 +278,8 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         "TableCell",
         parent=styles["Normal"],
         fontName="Times-Roman",
-        fontSize=7.2,
-        leading=9.0,
+        fontSize=8.0,
+        leading=10.5,
         textColor=colors.HexColor("#1A202C"),
     )
 
@@ -330,7 +330,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         body_style
     ))
     story.append(Paragraph(
-        "This project investigates the <b>Email-Eu-core</b> benchmark network published by the Stanford Network Analysis Platform (SNAP) [1]. Generated from email logs of a large European research institution over an 18-month observation window, the dataset captures interactions among researchers, staff, and leadership. Crucially, each individual is labeled with one of 42 ground-truth administrative departments. The network contains 1,005 institution members and 25,571 directed edges (<i>u</i>, <i>v</i>), representing at least one email sent from individual <i>u</i> to individual <i>v</i>. Edge weights representing email frequencies are not provided; edges indicate binary reachability.",
+        "This project investigates the <b>Email-Eu-core</b> benchmark network published by the Stanford Network Analysis Platform (SNAP) [1, 2]. Generated from email logs of a large European research institution over an 18-month observation window, the dataset captures interactions among researchers, staff, and leadership. Crucially, each individual is labeled with one of 42 ground-truth administrative departments. The network contains 1,005 institution members and 25,571 directed edges (<i>u</i>, <i>v</i>), representing at least one email sent from individual <i>u</i> to individual <i>v</i>. Edge weights representing email frequencies are not provided; edges indicate binary reachability.",
         body_style
     ))
     story.append(Paragraph("We formalize three coherent research questions:", body_style))
@@ -351,11 +351,11 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     # =========================================================================
     story.append(Paragraph("2 Data preparation", h1_style))
     story.append(Paragraph(
-        "<b>Data Integrity and Universe of Nodes:</b> Raw edge and department label files were acquired from SNAP and verified against published records. Parsing revealed exactly 25,571 edge records and 1,005 department mapping rows, with zero malformed entries and zero duplicate directed edges. Department identifiers span 0 &le; dept &le; 41, and node identifiers span 0 &le; node &le; 1004.",
+        "<b>Data Integrity and Universe of Nodes:</b> Raw edge and department label files were acquired from the official SNAP repository, and cryptographic SHA-256 checksums were recorded upon acquisition to guarantee local data integrity and pipeline reproducibility. Parsing revealed exactly 25,571 edge records and 1,005 department mapping rows, with zero malformed entries and zero duplicate directed edges. Department identifiers span 0 &le; dept &le; 41, and node identifiers span 0 &le; node &le; 1004.",
         body_style
     ))
     story.append(Paragraph(
-        "<b>Self-Loop Removal and Dual Graph Representation:</b> An edge audit revealed 642 self-loops (<i>u</i>, <i>u</i>), where an individual emailed themselves (draft storage, personal reminders, or automated calendar echoes). Retaining self-loops distorts network analytics: in PageRank, a self-loop traps teleported random walk mass; in community detection, self-loops inflate internal edge density without representing interpersonal exchange. To ensure reproducibility and methodological rigor, we maintain dual representations:",
+        "<b>Self-Loop Removal and Dual Graph Representation:</b> An edge audit revealed 642 self-loops (<i>u</i>, <i>u</i>), where the sender and receiver identifiers are identical in server logs. Retaining reflexive self-loops distorts interpersonal network analytics: in PageRank, self-loops trap teleported random walk probability; in community detection, self-loops artificially inflate internal edge density without representing interpersonal communication [1, 2]. To ensure methodological transparency, we analyze dual representations:",
         body_style
     ))
     story.append(Paragraph("• <b><i>G</i><sub>raw</sub>:</b> The raw directed graph containing all 1,005 nodes, 25,571 directed edges, and 642 self-loops, matching published SNAP statistics exactly.", bullet_style))
@@ -368,26 +368,26 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
 
     # Table 1: Dual Graph Representation Properties (exact printable width: 481.88 pt)
     t1_data = [
-        [Paragraph("Network Representation", table_header), Paragraph("Nodes (|V|)", table_header), Paragraph("Edges (|E|)", table_header), Paragraph("Self-Loops", table_header), Paragraph("Directed Density Formula & Value", table_header), Paragraph("WCC Giant", table_header), Paragraph("SCC Giant", table_header), Paragraph("Reciprocity (r)", table_header)],
-        [Paragraph("<i>G</i><sub>raw</sub> (Published SNAP)", table_cell_bold), Paragraph("1,005", table_cell), Paragraph("25,571", table_cell), Paragraph("642", table_cell), Paragraph("&rho; = |<i>E</i>| / |<i>V</i>|<sup>2</sup> = 0.025317", table_cell), Paragraph("986 (20 WCCs)", table_cell), Paragraph("803 (203 SCCs)", table_cell), Paragraph("0.6934 (69.3%)", table_cell)],
-        [Paragraph("<i>G</i><sub>analysis</sub> (Cleaned Directed)", table_cell_bold), Paragraph("1,005", table_cell), Paragraph("24,929", table_cell), Paragraph("0", table_cell), Paragraph("&rho; = |<i>E</i>| / [|<i>V</i>|(|<i>V</i>|&minus;1)] = 0.024706", table_cell), Paragraph("986 (20 WCCs)", table_cell), Paragraph("803 (203 SCCs)", table_cell), Paragraph("0.7112 (71.1%)", table_cell)],
-        [Paragraph("<i>G</i><sub>undirected</sub> (Louvain Projection)", table_cell_bold), Paragraph("1,005", table_cell), Paragraph("16,064", table_cell), Paragraph("0", table_cell), Paragraph("&rho; = 2|<i>E</i>| / [|<i>V</i>|(|<i>V</i>|&minus;1)] = 0.031841", table_cell), Paragraph("986 (20 CCs)", table_cell), Paragraph("— (Undirected)", table_cell), Paragraph("1.0000 (Symmetric)", table_cell)],
+        [Paragraph("Network Representation", table_header), Paragraph("Nodes |V|", table_header), Paragraph("Edges |E|", table_header), Paragraph("Self-Loops", table_header), Paragraph("Density (&rho;)", table_header), Paragraph("Reciprocity (r)", table_header)],
+        [Paragraph("<i>G</i><sub>raw</sub> (Published SNAP)", table_cell_bold), Paragraph("1,005", table_cell), Paragraph("25,571", table_cell), Paragraph("642", table_cell), Paragraph("0.025317", table_cell), Paragraph("0.6934 (69.3%)", table_cell)],
+        [Paragraph("<i>G</i><sub>analysis</sub> (Cleaned Directed)", table_cell_bold), Paragraph("1,005", table_cell), Paragraph("24,929", table_cell), Paragraph("0", table_cell), Paragraph("0.024706", table_cell), Paragraph("0.7112 (71.1%)", table_cell)],
+        [Paragraph("<i>G</i><sub>undirected</sub> (Louvain Projection)", table_cell_bold), Paragraph("1,005", table_cell), Paragraph("16,064", table_cell), Paragraph("0", table_cell), Paragraph("0.031841", table_cell), Paragraph("1.0000 (Symmetric)", table_cell)],
     ]
-    t1 = Table(t1_data, colWidths=[95, 45, 45, 40, 115, 53, 48, 40.8])
+    t1 = Table(t1_data, colWidths=[130, 52, 58, 52, 94, 95.88])
     t1.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A365D")),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAFC")]),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 2.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
-        ("LEFTPADDING", (0, 0), (-1, -1), 3),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+        ("TOPPADDING", (0, 0), (-1, -1), 3.0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.0),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
     ]))
     
     t1_block = KeepTogether([
         t1,
-        Paragraph("<b>Table 1:</b> Topological properties and structural invariants across graph representations.", caption_style)
+        Paragraph("<b>Table 1:</b> Topological properties across graph representations. Density formulas: &rho;<sub>raw</sub> = |E|/|V|<sup>2</sup>; &rho;<sub>analysis</sub> = |E|/[|V|(|V|&minus;1)]; &rho;<sub>undir</sub> = 2|E|/[|V|(|V|&minus;1)]. Across all representations, the giant weakly connected component spans 986 nodes (20 components total), and the directed strongly connected giant component spans 803 nodes (203 components total).", caption_style)
     ])
     story.append(t1_block)
     story.append(Spacer(1, 14))  # 14 pt vertical spacing before Figure 1
@@ -409,7 +409,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     # =========================================================================
     story.append(Paragraph("3 Methods and how they connect", h1_style))
     story.append(Paragraph(
-        "<b>Algorithm Class 1: PageRank Centrality (Lecture 6):</b> Directed email networks represent endorsement flows where an incoming link (<i>u</i>, <i>v</i>) indicates that sender <i>u</i> acknowledges receiver <i>v</i>. PageRank models a random surfer who follows outgoing links with probability <i>d</i> (damping factor) and teleports uniformly across all |<i>V</i>| = <i>N</i> nodes with probability 1 &minus; <i>d</i>. Dangling nodes (out-degree zero, including the 19 preserved isolates and 15 pure recipients) redistribute their entire random walk probability uniformly across all <i>N</i> nodes at each iteration:",
+        "<b>Algorithm Class 1: PageRank Centrality (Lecture 6) [3]:</b> Directed email networks represent endorsement flows where an incoming link (<i>u</i>, <i>v</i>) indicates that sender <i>u</i> acknowledges receiver <i>v</i>. PageRank models a random surfer who follows outgoing links with probability <i>d</i> (damping factor) and teleports uniformly across all |<i>V</i>| = <i>N</i> nodes with probability 1 &minus; <i>d</i>. Dangling nodes (out-degree zero, including the 19 preserved isolates and 15 pure recipients) redistribute their entire random walk probability uniformly across all <i>N</i> nodes at each iteration:",
         body_style
     ))
 
@@ -424,7 +424,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     story.append(Spacer(1, 4))
 
     story.append(Paragraph(
-        "<b>Algorithm Class 2: Louvain Modularity Optimization (Lecture 7):</b> To detect emergent communication communities without supervision, we apply the Louvain algorithm to <i>G</i><sub>undirected</sub>. Louvain greedily optimizes Newman-Girvan modularity:",
+        "<b>Algorithm Class 2: Louvain Modularity Optimization (Lecture 7) [4, 5]:</b> To detect emergent communication communities without supervision, we apply the Louvain algorithm to <i>G</i><sub>undirected</sub>. Louvain greedily optimizes Newman-Girvan modularity:",
         body_style
     ))
 
@@ -439,7 +439,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     story.append(Spacer(1, 4))
 
     story.append(Paragraph(
-        "<b>Community Quality Metrics:</b> We assess structural cohesion using modularity <i>Q</i> and conductance <i>&phi;</i>(<i>S</i>). For a community <i>S</i>, conductance evaluates boundary cut relative to volume:",
+        "<b>Community Quality Metrics:</b> We assess structural cohesion using modularity <i>Q</i> [5] and conductance <i>&phi;</i>(<i>S</i>) [1, 6]. For a community <i>S</i>, conductance evaluates boundary cut relative to volume:",
         body_style
     ))
 
@@ -460,7 +460,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     # =========================================================================
     story.append(Paragraph("3 Methods and how they connect (continued)", h1_style))
     story.append(Paragraph(
-        "<b>How the Methods Connect (Integrated Boundary Analysis):</b> Rather than treating centrality and clustering as isolated exercises, we bridge them directly to answer RQ3. For every node <i>v</i>, we project its PageRank score against its boundary bridging behavior in <i>G</i><sub>undirected</sub>:",
+        "<b>How the Methods Connect (Integrated Boundary Analysis):</b> Rather than treating centrality and clustering as isolated exercises, we bridge them directly to answer RQ3, connecting centrality to structural hole theory and weak-tie bridging [7, 8]:",
         body_style
     ))
 
@@ -475,7 +475,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     story.append(Spacer(1, 4))
 
     story.append(Paragraph(
-        "<b>Departmental Homophily Null Model Baseline:</b> To evaluate whether within-department communication exceeds chance, we construct a uniform random ordered-pair reference model:",
+        "<b>Departmental Homophily Null Model Baseline:</b> To evaluate whether within-department communication exceeds chance, driven by institutional homophily [9], we construct a uniform random ordered-pair reference model:",
         body_style
     ))
 
@@ -494,7 +494,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     if fig2_clean.exists():
         fig2_block = KeepTogether([
             Image(str(fig2_clean), width=printable_width, height=170),
-            Paragraph("<b>Figure 2:</b> Department organization and communication composition. (a) Member populations of the 12 largest departments (Median = 14.5). (b) Observed within-department links (34.68%) exceed the uniform random null model baseline (<i>p</i><sub>null</sub> = 4.67%) by 7.43&times;, confirming strong departmental homophily amidst dominant (65.32%) cross-department communication.", caption_style)
+            Paragraph("<b>Figure 2:</b> Department organization and communication composition. (a) Member populations of the 10 largest departments (overall departmental median = 14.5). (b) Observed within-department links (34.68%) exceed the uniform random null model baseline (<i>p</i><sub>null</sub> = 4.67%) by 7.43&times;, confirming strong departmental homophily amidst dominant (65.32%) cross-department communication.", caption_style)
         ])
         story.append(fig2_block)
 
@@ -520,13 +520,13 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     if fig3_clean.exists():
         fig3_block = KeepTogether([
             Image(str(fig3_clean), width=printable_width, height=165),
-            Paragraph("<b>Figure 3:</b> PageRank vs. in-degree centrality on <i>G</i><sub>analysis</sub>. (a) Global scatter plot (Spearman <i>&rho;</i><sub><i>s</i></sub> = 0.9828) highlighting Node 160 (Rank 1 consensus), Node 451 (+622 PageRank boost), and Node 83 (in-degree diluted). (b) Rank shifts &Delta;<i>R</i> = <i>R</i><sub>in</sub> &minus; <i>R</i><sub>PR</sub> for the Top 15 PageRank individuals.", caption_style)
+            Paragraph("<b>Figure 3:</b> PageRank vs. in-degree centrality on <i>G</i><sub>analysis</sub>. (a) Global scatter plot (Spearman <i>&rho;</i><sub><i>s</i></sub> = 0.9828) highlighting Node 160 (Rank 1 consensus), Node 451 (+622 PageRank boost), and Node 83 (in-degree diluted). (b) Rank shifts &Delta;<i>R</i> = <i>R</i><sub>in</sub> &minus; <i>R</i><sub>PR</sub> for the Top 10 PageRank individuals.", caption_style)
         ])
         story.append(fig3_block)
         story.append(Spacer(1, 10))
 
     story.append(Paragraph(
-        "<b>Structural Implications of Ranking Disagreements:</b> The empirical findings confirm that while simple in-degree serves as a strong heuristic for general visibility, it fails to capture endorsement concentration. Node 451 illustrates that individuals embedded in specialized executive or confidential communication channels can achieve disproportionate institutional influence despite low overall email volume. Conversely, high-volume broadcast recipients (such as Node 83) are heavily discounted by PageRank due to outbound link dilution.",
+        "<b>Structural Implications of Ranking Disagreements:</b> The empirical findings confirm that while in-degree serves as a strong heuristic for general connectivity, it does not account for endorsement concentration. Node 451 illustrates that an individual can attain elevated PageRank by receiving concentrated endorsements from high-prestige senders (specifically Node 365, which has out-degree 1 and directs all endorsement mass to Node 451), despite having low overall degree. Conversely, individuals who receive links primarily from high-out-degree senders (such as Node 83) experience dilution of incoming endorsement mass under the random-surfer model.",
         body_style
     ))
 
@@ -545,27 +545,27 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
 
     # Table 2: Community Quality Comparison (exact printable width: 481.88 pt)
     t2_data = [
-        [Paragraph("Partition Scheme", table_header), Paragraph("Clusters", table_header), Paragraph("Modularity (Q)", table_header), Paragraph("Median Cond (&phi;)", table_header), Paragraph("Mean Cond (&phi;)", table_header), Paragraph("NMI vs. Dept", table_header), Paragraph("ARI vs. Dept", table_header)],
-        [Paragraph("Louvain Baseline (&gamma;=1.0, seed 42)", table_cell_bold), Paragraph("9 (+19 isolates)", table_cell), Paragraph("0.4130", table_cell), Paragraph("0.4201 (C6: 0.278)", table_cell), Paragraph("0.4475", table_cell), Paragraph("0.5946", table_cell), Paragraph("0.3505", table_cell)],
-        [Paragraph("Official Departments (SNAP)", table_cell_bold), Paragraph("42 departments", table_cell), Paragraph("0.2880", table_cell), Paragraph("0.8644 (Dept 3: 0.30)", table_cell), Paragraph("0.7871", table_cell), Paragraph("1.0000 (Self)", table_cell), Paragraph("1.0000 (Self)", table_cell)],
-        [Paragraph("Louvain (&gamma;=0.8, Coarser)", table_cell), Paragraph("6 (+19 isolates)", table_cell), Paragraph("0.4105 (Q_obj: 0.459)", table_cell), Paragraph("0.3523", table_cell), Paragraph("0.3515", table_cell), Paragraph("0.5272", table_cell), Paragraph("0.2223", table_cell)],
-        [Paragraph("Louvain (&gamma;=1.2, Finer)", table_cell), Paragraph("10 (+19 isolates)", table_cell), Paragraph("0.4051 (Q_obj: 0.383)", table_cell), Paragraph("0.5191", table_cell), Paragraph("0.4942", table_cell), Paragraph("0.6247", table_cell), Paragraph("0.4321", table_cell)],
+        [Paragraph("Partition Scheme", table_header), Paragraph("Communities", table_header), Paragraph("Modularity (Q)", table_header), Paragraph("Median Cond (&phi;)", table_header), Paragraph("NMI vs. Dept", table_header), Paragraph("ARI vs. Dept", table_header)],
+        [Paragraph("Louvain Baseline (&gamma;=1.0, seed 42)", table_cell_bold), Paragraph("9 (+19 isolates)", table_cell), Paragraph("0.4130", table_cell), Paragraph("0.4201", table_cell), Paragraph("0.5946", table_cell), Paragraph("0.3505", table_cell)],
+        [Paragraph("Official Departments (SNAP)", table_cell_bold), Paragraph("42 departments", table_cell), Paragraph("0.2880", table_cell), Paragraph("0.8644", table_cell), Paragraph("1.0000", table_cell), Paragraph("1.0000", table_cell)],
+        [Paragraph("Louvain (&gamma;=0.8, Coarser)", table_cell), Paragraph("6 (+19 isolates)", table_cell), Paragraph("0.4105", table_cell), Paragraph("0.3523", table_cell), Paragraph("0.5272", table_cell), Paragraph("0.2223", table_cell)],
+        [Paragraph("Louvain (&gamma;=1.2, Finer)", table_cell), Paragraph("10 (+19 isolates)", table_cell), Paragraph("0.4051", table_cell), Paragraph("0.5191", table_cell), Paragraph("0.6247", table_cell), Paragraph("0.4321", table_cell)],
     ]
-    t2 = Table(t2_data, colWidths=[116, 60, 68, 75, 72, 45, 45.8])
+    t2 = Table(t2_data, colWidths=[140, 75, 70, 70, 60, 66.88])
     t2.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A365D")),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAFC")]),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 2.0),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2.0),
-        ("LEFTPADDING", (0, 0), (-1, -1), 2.5),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 2.5),
+        ("TOPPADDING", (0, 0), (-1, -1), 3.0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.0),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
     ]))
     
     t2_block = KeepTogether([
         t2,
-        Paragraph("<b>Table 2:</b> Quality metrics and external alignment across community detection configurations and official departments.", caption_style)
+        Paragraph("<b>Table 2:</b> Structural quality and department alignment across community detection configurations and official departments. Modularity <i>Q</i> is computed using the standard Newman-Girvan definition (&gamma;=1.0); resolution-adjusted objectives are <i>Q</i><sub>obj</sub> = 0.4590 (&gamma;=0.8) and <i>Q</i><sub>obj</sub> = 0.3832 (&gamma;=1.2). Mean conductances are 0.4475 (Louvain baseline, min 0.2780 in C6), 0.7871 (departments, min 0.3000 in Dept 3), 0.3515 (&gamma;=0.8), and 0.4942 (&gamma;=1.2).", caption_style)
     ])
     story.append(t2_block)
     story.append(Spacer(1, 14))  # 14 pt vertical spacing before Figure 4
@@ -600,7 +600,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     story.append(Paragraph("• <b>Cross-Community Connection Fraction:</b> Top 10% dedicate a mean of <b>55.79%</b> of their links outside their primary community (median 58.10%) vs. <b>26.56%</b> (median 25.00%) for remaining non-isolated nodes (<i>N</i> = 885), more than double the proportion (Mann-Whitney <i>U</i> = 77,037.5, <i>p</i> = 4.59 &times; 10<sup>&minus;33</sup>).", bullet_style))
     story.append(Spacer(1, 4))
     story.append(Paragraph(
-        "<b>Degree Confounding and Stratified Analysis:</b> Total undirected degree is a major confounder, correlating strongly with PageRank (<i>&rho;</i><sub><i>s</i></sub> = 0.9614) and cross-community count (<i>&rho;</i><sub><i>s</i></sub> = 0.9155). Controlling globally for degree yields a slightly negative partial rank correlation (Partial <i>&rho;</i><sub><i>s</i></sub> = &minus;0.1803, <i>p</i> = 1.15 &times; 10<sup>&minus;8</sup>) because receiving concentrated endorsements inside dense core clusters boosts PageRank without boundary spanning. However, degree stratification resolves this dynamic: exactly <b>100 of the 101 Top 10% PageRank nodes (99.0%) reside in the highest degree quartile Q4</b> (<i>d</i> &ge; 45, <i>N</i> = 247). Within Q4, Top 10% PageRank nodes exhibit a 2.72&times; higher cross-community count (<b>68.56 vs. 25.17</b>, <i>p</i> = 2.10 &times; 10<sup>&minus;27</sup>) and significantly higher cross-boundary fraction (<b>56.34% vs. 41.30%</b>, <i>p</i> = 5.69 &times; 10<sup>&minus;12</sup>). PageRank reliably distinguishes broad multi-cluster brokers from internal hubs among well-connected individuals.",
+        "<b>Degree Confounding and Stratified Analysis:</b> Total undirected degree is a major confounder, correlating strongly with PageRank (<i>&rho;</i><sub><i>s</i></sub> = 0.9614) and cross-community count (<i>&rho;</i><sub><i>s</i></sub> = 0.9155). Controlling globally for degree yields a slightly negative partial rank correlation (Partial <i>&rho;</i><sub><i>s</i></sub> = &minus;0.1803, <i>p</i> = 1.15 &times; 10<sup>&minus;8</sup>) because receiving concentrated endorsements inside dense core clusters boosts PageRank without boundary spanning. However, degree stratification clarifies this dynamic: exactly <b>100 of the 101 Top 10% PageRank nodes (99.0%) reside in the highest degree quartile Q4</b> (<i>d</i> &ge; 45, <i>N</i> = 247). Within Q4, Top 10% PageRank nodes exhibit a higher mean cross-community count (<b>68.56 vs. 25.17</b>, <i>p</i> = 2.10 &times; 10<sup>&minus;27</sup>) and a higher cross-boundary fraction (<b>56.34% vs. 41.30%</b>, <i>p</i> = 5.69 &times; 10<sup>&minus;12</sup>). While PageRank correlates with boundary connectivity among active individuals, total degree remains a substantial confounder, and within-quartile comparisons do not entirely eliminate residual degree variance.",
         body_style
     ))
     story.append(Spacer(1, 14))  # 14 pt vertical spacing before Figure 5
@@ -617,26 +617,26 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
 
     # Table 3: Structural Archetypes Summary (exact printable width: 481.88 pt)
     t3_data = [
-        [Paragraph("Structural Archetype", table_header), Paragraph("Focal Node", table_header), Paragraph("Dept / Comm", table_header), Paragraph("PageRank (Score / Rank)", table_header), Paragraph("In-Degree (Rank)", table_header), Paragraph("Undir Deg", table_header), Paragraph("Internal / Cross", table_header), Paragraph("Cross Frac", table_header), Paragraph("Comms Spanned", table_header)],
-        [Paragraph("Global Boundary Spanner", table_cell_bold), Paragraph("Node 160", table_cell), Paragraph("Dept 36 / Comm 4", table_cell), Paragraph("0.007495 (Rank 1)", table_cell), Paragraph("211 (Rank 1)", table_cell), Paragraph("345", table_cell), Paragraph("51 / 294", table_cell), Paragraph("85.22%", table_cell_bold), Paragraph("8 external comms", table_cell)],
-        [Paragraph("Internal Community Hub", table_cell_bold), Paragraph("Node 451", table_cell), Paragraph("Dept 14 / Comm 6", table_cell), Paragraph("0.003117 (Rank 37)", table_cell), Paragraph("8 (Rank 659)", table_cell), Paragraph("13", table_cell), Paragraph("13 / 0", table_cell), Paragraph("0.00%", table_cell_bold), Paragraph("0 external comms", table_cell)],
-        [Paragraph("Peripheral Bridge", table_cell_bold), Paragraph("Node 644", table_cell), Paragraph("Dept 25 / Comm 7", table_cell), Paragraph("0.000514 (Rank 633)", table_cell), Paragraph("11 (Rank 606)", table_cell), Paragraph("15", table_cell), Paragraph("2 / 13", table_cell), Paragraph("86.67%", table_cell_bold), Paragraph("5 external comms", table_cell)],
+        [Paragraph("Structural Archetype", table_header), Paragraph("Node", table_header), Paragraph("PageRank (Rank)", table_header), Paragraph("In-Degree (Rank)", table_header), Paragraph("Total Degree", table_header), Paragraph("Cross Ties", table_header), Paragraph("Cross Fraction", table_header)],
+        [Paragraph("Global Boundary Spanner", table_cell_bold), Paragraph("Node 160", table_cell), Paragraph("0.007495 (Rank 1)", table_cell), Paragraph("211 (Rank 1)", table_cell), Paragraph("345", table_cell), Paragraph("294", table_cell), Paragraph("85.22%", table_cell_bold)],
+        [Paragraph("Internal Community Hub", table_cell_bold), Paragraph("Node 451", table_cell), Paragraph("0.003117 (Rank 37)", table_cell), Paragraph("8 (Rank 659)", table_cell), Paragraph("13", table_cell), Paragraph("0", table_cell), Paragraph("0.00%", table_cell_bold)],
+        [Paragraph("Peripheral Bridge", table_cell_bold), Paragraph("Node 644", table_cell), Paragraph("0.000514 (Rank 633)", table_cell), Paragraph("11 (Rank 606)", table_cell), Paragraph("15", table_cell), Paragraph("13", table_cell), Paragraph("86.67%", table_cell_bold)],
     ]
-    t3 = Table(t3_data, colWidths=[80, 46, 56, 68, 48, 38, 65, 40, 40.8])
+    t3 = Table(t3_data, colWidths=[125, 48, 90, 75, 44, 45, 54.88])
     t3.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1A365D")),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAFC")]),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E0")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 2.0),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2.0),
-        ("LEFTPADDING", (0, 0), (-1, -1), 2.0),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 2.0),
+        ("TOPPADDING", (0, 0), (-1, -1), 3.0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.0),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
     ]))
     
     t3_block = KeepTogether([
         t3,
-        Paragraph("<b>Table 3:</b> Descriptive structural archetypes illustrating distinct topological configurations in Email-Eu-core.", caption_style)
+        Paragraph("<b>Table 3:</b> Descriptive structural archetypes in Email-Eu-core. Node 160 (Dept 36, Community C4) maintains 51 internal ties and 294 cross-community ties reaching 8 external communities. Node 451 (Dept 14, Community C6) maintains 13 internal ties and 0 cross-community ties (0 external communities reached). Node 644 (Dept 25, Community C7) maintains 2 internal ties and 13 cross-community ties reaching 5 external communities.", caption_style)
     ])
     story.append(t3_block)
 
@@ -648,23 +648,23 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     # =========================================================================
     story.append(Paragraph("5 Insights and limitations", h1_style))
     story.append(Paragraph(
-        "<b>Substantive Organizational Insights:</b> Our findings demonstrate that informal communication reorganizes official academic hierarchies. While departmental homophily is strongly enriched (7.43&times; above random expectation), nearly two-thirds (65.32%) of directed communications cross departmental boundaries. Unsupervised community detection reveals that departments consolidate into multi-departmental research clusters with sharp communication boundaries (conductance 0.420 vs. 0.864 for departments). Furthermore, elite prominence is overwhelmingly associated with boundary spanning: individuals in the top 10% PageRank tier maintain an 8.55&times; higher cross-community degree and dedicate more than double their ties across cluster borders. However, this bridging role is not uniform: individuals such as Node 451 achieve high centrality through insular prestige without boundary spanning.",
+        "<b>Substantive Organizational Insights:</b> Our findings demonstrate that informal communication reorganizes official academic hierarchies. While departmental homophily is strongly enriched (7.43&times; above random expectation), nearly two-thirds (65.32%) of directed communications cross departmental boundaries. Unsupervised community detection reveals that departments consolidate into multi-departmental research clusters with sharp communication boundaries (median conductance 0.420 vs. 0.864 for departments). Highly ranked individuals in this network tend to exhibit extensive cross-community connectivity: individuals in the top 10% PageRank tier average an 8.55&times; higher cross-community degree and dedicate a larger share of their ties across cluster borders. However, this pattern is strongly confounded by total degree, and individuals such as Node 451 demonstrate that high PageRank can also arise entirely within a single community through concentrated incoming links.",
         body_style
     ))
     story.append(Paragraph("<b>Methodological Limitations:</b>", body_style))
-    story.append(Paragraph("1. <i>Network Autocorrelation & Inferential Tests:</i> Network observations violate the independent and identically distributed (i.i.d.) assumption due to dyadic reciprocity (71.12%) and transitive closure. Reported Mann-Whitney U test <i>p</i>-values are descriptive indicators of distributional separation rather than formal causal proofs.", bullet_style))
-    story.append(Paragraph("2. <i>Binary vs. Weighted Edges:</i> The dataset lacks email frequencies, durations, and content. A single administrative announcement is topologically indistinguishable from frequent daily exchanges.", bullet_style))
-    story.append(Paragraph("3. <i>Non-Causal Interpretations:</i> Network position reflects structural embedding, not formal organizational authority, leadership effectiveness, or deliberate brokerage intent. Case studies represent structural archetypes, not verified organizational roles.", bullet_style))
-    story.append(Spacer(1, 4))
+    story.append(Paragraph("1. <i>Network Autocorrelation & Descriptive Inference:</i> Dyadic reciprocity (71.12%) and transitivity violate i.i.d. assumptions; reported Mann-Whitney U test <i>p</i>-values are descriptive indicators of distributional separation rather than formal causal proofs.", bullet_style))
+    story.append(Paragraph("2. <i>Binary vs. Weighted Edges:</i> Edge weights, frequencies, and message contents are unobserved; single administrative broadcasts are topologically indistinguishable from frequent collaboration.", bullet_style))
+    story.append(Paragraph("3. <i>Degree Confounding & Non-Causal Embedding:</i> Total degree strongly confounds PageRank (<i>&rho;</i><sub><i>s</i></sub> = 0.9614) and boundary ties (<i>&rho;</i><sub><i>s</i></sub> = 0.9155); quartile stratification narrows but does not eliminate residual degree variance. Network positions reflect structural embedding, not formal authority, effectiveness, or deliberate brokerage intent.", bullet_style))
+    story.append(Spacer(1, 3))
     story.append(Paragraph(
-        "<b>Summary Conclusion:</b> In summary, this investigation demonstrates that communication in complex knowledge institutions systematically transcends designated departmental lines. Centrality and community detection techniques provide complementary lenses: PageRank identifies individuals who command structural prominence through high-quality endorsements, while Louvain modularity optimization reveals organic, multi-departmental clusters that govern operational exchange. Crucially, structurally prominent individuals act primarily as inter-community boundary spanners—even after conditioning on high node degree—demonstrating that cross-cluster connectivity is an intrinsic property of institutional prominence.",
+        "<b>Summary Conclusion:</b> In summary, informal communication in this research institution systematically transcends administrative departmental lines. PageRank identifies individuals commanding structural prestige through concentrated endorsements, while Louvain modularity optimization reveals organic, multi-departmental clusters governing operational exchange. Highly ranked individuals frequently exhibit substantial cross-community connectivity, though this relationship is substantially mediated by total degree. Assessing boundary spanning requires joint evaluation of prestige centrality, community partitions, and degree distributions.",
         body_style
     ))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 4))
 
     story.append(Paragraph("6 Reproducibility information", h1_style))
     story.append(Paragraph(
-        "<b>Dataset Acquisition & Cryptographic Verification:</b> The research dataset is the Stanford Network Analysis Platform (SNAP) Email-Eu-core benchmark network, accessible from the official SNAP repository (https://snap.stanford.edu/data/email-Eu-core.html). Full 64-character SHA-256 cryptographic hashes for both edge lists and department labels were computed and verified against published benchmark records in the pipeline, and are permanently documented in the accompanying standalone analysis notebook and repository verification suite.",
+        "<b>Dataset Acquisition & Cryptographic Verification:</b> The research dataset is the SNAP Email-Eu-core benchmark network (https://snap.stanford.edu/data/email-Eu-core.html) [1, 2]. Full 64-character SHA-256 cryptographic checksums for both edge lists and department labels were computed immediately upon acquisition to establish a local integrity baseline for automated pipeline verification and reproducibility, permanently documented in the accompanying standalone analysis notebook and repository verification suite.",
         body_style
     ))
     story.append(Paragraph(
@@ -672,11 +672,11 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         body_style
     ))
     story.append(Paragraph(
-        "<b>Software and Computing Environment:</b> All analyses were executed under Python 3.10.6 on standard commodity hardware (operable within 8 GB RAM). Exact pinned library versions specified in <code>requirements.txt</code>: NetworkX 3.4.2, SciPy 1.15.3, scikit-learn 1.5.2, pandas 2.3.3, NumPy 1.26.4, matplotlib 3.10.9, seaborn 0.13.2.",
+        "<b>Software and Computing Environment:</b> Executed under Python 3.10.6 on standard commodity hardware (operable within 8 GB RAM). Pinned versions in <code>requirements.txt</code>: NetworkX 3.4.2, SciPy 1.15.3, scikit-learn 1.5.2, pandas 2.3.3, NumPy 1.26.4, matplotlib 3.10.9, seaborn 0.13.2.",
         body_style
     ))
     story.append(Paragraph(
-        "<b>Algorithmic Parameters & Random Seeds:</b> PageRank was computed using damping factor <i>d</i> = 0.85, uniform personalization, NetworkX dangling mass redistribution, and convergence tolerance 10<sup>&minus;6</sup>. Louvain modularity optimization was performed with resolution <i>&gamma;</i> = 1.0 and fixed random seed 42. Deterministic tie-breaking is enforced throughout by sorting by metric descending, then node ID ascending.",
+        "<b>Algorithmic Parameters & Random Seeds:</b> PageRank was computed using damping factor <i>d</i> = 0.85, uniform personalization, NetworkX dangling mass redistribution, and convergence tolerance 10<sup>&minus;6</sup> [3]. Louvain modularity optimization was performed with resolution <i>&gamma;</i> = 1.0 and fixed random seed 42 [4, 5]. Deterministic tie-breaking is enforced by sorting by metric descending, then node ID ascending.",
         body_style
     ))
     story.append(Paragraph(
