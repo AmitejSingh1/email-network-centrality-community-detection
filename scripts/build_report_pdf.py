@@ -82,7 +82,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Running Footer (all pages)
         page_str = f"Page {self._pageNumber} of {page_count}"
-        if self._pageNumber >= NumberedCanvas.references_start_page:
+        if self._pageNumber == page_count:
             page_label = f"{page_str} (References — Excluded from 8-Page Limit)"
         else:
             page_label = f"{page_str} (Main Report)"
@@ -233,8 +233,8 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         fontSize=11.5,
         leading=14.5,
         textColor=colors.HexColor("#1A365D"),
-        spaceBefore=7,
-        spaceAfter=3,
+        spaceBefore=10,
+        spaceAfter=4,
         keepWithNext=True,
     )
 
@@ -342,24 +342,25 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         "By answering these questions using rigorous graph algorithms, statistical null models, and degree-adjusted controls, this study illuminates the topological interplay between formal hierarchies, informal networks, and individual prominence in complex knowledge institutions.",
         body_style
     ))
-
-    # PageBreak to Page 2
-    story.append(PageBreak())
+    story.append(Spacer(1, 8))
 
     # =========================================================================
-    # PAGE 2: SECTION 2 (DATA PREPARATION, TABLE 1, FIGURE 1)
+    # SECTION 2: DATA PREPARATION (TABLE 1, FIGURE 1)
     # =========================================================================
     story.append(Paragraph("2 Data preparation", h1_style))
     story.append(Paragraph(
         "<b>Data Integrity and Universe of Nodes:</b> Raw edge and department label files were acquired from the official SNAP repository, and cryptographic SHA-256 checksums were recorded upon acquisition to guarantee local data integrity and pipeline reproducibility. Parsing revealed exactly 25,571 edge records and 1,005 department mapping rows, with zero malformed entries and zero duplicate directed edges. Department identifiers span 0 &le; dept &le; 41, and node identifiers span 0 &le; node &le; 1004.",
         body_style
     ))
-    story.append(Paragraph(
-        "<b>Self-Loop Removal and Dual Graph Representation:</b> An edge audit revealed 642 self-loops (<i>u</i>, <i>u</i>), where the sender and receiver identifiers are identical in server logs. Retaining reflexive self-loops distorts interpersonal network analytics: in PageRank, self-loops trap teleported random walk probability; in community detection, self-loops artificially inflate internal edge density without representing interpersonal communication [1, 2]. To ensure methodological transparency, we analyze dual representations:",
-        body_style
-    ))
-    story.append(Paragraph("• <b><i>G</i><sub>raw</sub>:</b> The raw directed graph containing all 1,005 nodes, 25,571 directed edges, and 642 self-loops, matching published SNAP statistics exactly.", bullet_style))
-    story.append(Paragraph("• <b><i>G</i><sub>analysis</sub>:</b> The cleaned interpersonal directed graph containing all 1,005 nodes and exactly 24,929 interpersonal directed edges (25,571 &minus; 642). Crucially, the 19 singleton individuals whose only raw edges were self-loops are strictly preserved as degree-0 nodes with their ground-truth department labels to prevent selection bias.", bullet_style))
+    self_loop_block = KeepTogether([
+        Paragraph(
+            "<b>Self-Loop Removal and Dual Graph Representation:</b> An edge audit revealed 642 self-loops (<i>u</i>, <i>u</i>), where the sender and receiver identifiers are identical in server logs. Retaining reflexive self-loops distorts interpersonal network analytics: in PageRank, self-loops trap teleported random walk probability; in community detection, self-loops artificially inflate internal edge density without representing interpersonal communication [1, 2]. To ensure methodological transparency, we analyze dual representations:",
+            body_style
+        ),
+        Paragraph("• <b><i>G</i><sub>raw</sub>:</b> The raw directed graph containing all 1,005 nodes, 25,571 directed edges, and 642 self-loops, matching published SNAP statistics exactly.", bullet_style),
+        Paragraph("• <b><i>G</i><sub>analysis</sub>:</b> The cleaned interpersonal directed graph containing all 1,005 nodes and exactly 24,929 interpersonal directed edges (25,571 &minus; 642). Crucially, the 19 singleton individuals whose only raw edges were self-loops are strictly preserved as degree-0 nodes with their ground-truth department labels to prevent selection bias.", bullet_style),
+    ])
+    story.append(self_loop_block)
     story.append(Spacer(1, 4))
     story.append(Paragraph(
         "<b>Undirected Projection (<i>G</i><sub>undirected</sub>):</b> Louvain modularity optimization assumes symmetric adjacency. We construct an unweighted undirected projection <i>G</i><sub>undirected</sub> from <i>G</i><sub>analysis</sub>, collapsing reciprocal directed links (<i>u</i>, <i>v</i>) and (<i>v</i>, <i>u</i>) into a single undirected edge {<i>u</i>, <i>v</i>}. This projection preserves all 1,005 nodes (including the 19 isolates) and contains exactly 16,064 undirected edges. Reciprocal links account for 8,865 pairs (17,730 directed edges, 71.12%, matching the 0.7112 directed reciprocity of <i>G</i><sub>analysis</sub>), while 7,199 links are unreciprocated (28.88%). Directional initiation asymmetry is collapsed into binary reachability.",
@@ -401,11 +402,10 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         ])
         story.append(fig1_block)
 
-    # PageBreak to Page 3
-    story.append(PageBreak())
+    story.append(Spacer(1, 10))
 
     # =========================================================================
-    # PAGE 3: SECTION 3 PART A (PAGERANK, LOUVAIN, CONDUCTANCE)
+    # SECTION 3: METHODS AND HOW THEY CONNECT
     # =========================================================================
     story.append(Paragraph("3 Methods and how they connect", h1_style))
     story.append(Paragraph(
@@ -451,14 +451,8 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         "where &part;(<i>S</i>) = {{<i>u</i>, <i>v</i>} &isin; <i>E</i> | <i>u</i> &isin; <i>S</i>, <i>v</i> &notin; <i>S</i>} is the boundary cut, and vol(<i>S</i>) = &sum;<sub><i>u</i> &isin; <i>S</i></sub> <i>k</i><sub><i>u</i></sub> = 2|<i>E</i>(<i>S</i>, <i>S</i>)| + |&part;(<i>S</i>)| is total degree volume. Conductance evaluates boundary cut size relative to total volume (not the fraction of links, since internal edges contribute twice to volume). Lower conductance indicates a sharper, more self-contained boundary.",
         body_style
     ))
+    story.append(Spacer(1, 6))
 
-    # PageBreak to Page 4
-    story.append(PageBreak())
-
-    # =========================================================================
-    # PAGE 4: SECTION 3 PART B (CONNECTING METHODS, NULL MODEL, FIGURE 2)
-    # =========================================================================
-    story.append(Paragraph("3 Methods and how they connect (continued)", h1_style))
     story.append(Paragraph(
         "<b>How the Methods Connect (Integrated Boundary Analysis):</b> Rather than treating centrality and clustering as isolated exercises, we bridge them directly to answer RQ3, connecting centrality to structural hole theory and weak-tie bridging [7, 8]:",
         body_style
@@ -498,11 +492,10 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         ])
         story.append(fig2_block)
 
-    # PageBreak to Page 5
-    story.append(PageBreak())
+    story.append(Spacer(1, 10))
 
     # =========================================================================
-    # PAGE 5: SECTION 4 PART A (RQ1 RESULTS & FIGURE 3)
+    # SECTION 4: EVALUATION AND RESULTS
     # =========================================================================
     story.append(Paragraph("4 Evaluation and results", h1_style))
     story.append(Paragraph(
@@ -529,14 +522,8 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         "<b>Structural Implications of Ranking Disagreements:</b> The empirical findings confirm that while in-degree serves as a strong heuristic for general connectivity, it does not account for endorsement concentration. Node 451 illustrates that an individual can attain elevated PageRank by receiving concentrated endorsements from high-prestige senders (specifically Node 365, which has out-degree 1 and directs all endorsement mass to Node 451), despite having low overall degree. Conversely, individuals who receive links primarily from high-out-degree senders (such as Node 83) experience dilution of incoming endorsement mass under the random-surfer model.",
         body_style
     ))
+    story.append(Spacer(1, 6))
 
-    # PageBreak to Page 6
-    story.append(PageBreak())
-
-    # =========================================================================
-    # PAGE 6: SECTION 4 PART B (RQ2 RESULTS, TABLE 2, FIGURE 4)
-    # =========================================================================
-    story.append(Paragraph("4 Evaluation and results (continued)", h1_style))
     story.append(Paragraph(
         "<b>RQ2 Results: Louvain Communities vs. Administrative Departments:</b> Louvain modularity optimization (<i>&gamma;</i> = 1.0, seed 42) discovers 28 communities: 9 non-trivial cohesive communities spanning 986 nodes, plus 19 isolated singletons (sizes: C0: 190, C1: 157, C2: 145, C3: 127, C4: 125, C5: 109, C6: 91, C7: 32, C8: 10). Louvain achieves modularity <i>Q</i><sub>Louvain</sub> = 0.4130 and median conductance 0.4201 (mean 0.4475, min 0.2780 in C6). By contrast, partitioning the same graph by official departments yields substantially lower modularity <i>Q</i><sub>dept</sub> = 0.2880 and severe boundary leakage (median departmental conductance 0.8644, mean 0.7871). External concordance is moderate: Normalized Mutual Information NMI = 0.5946, and Adjusted Rand Index ARI = 0.3505.",
         body_style
@@ -584,20 +571,17 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         "<b>Departmental Consolidation and Fragmentation:</b> Inspection of the contingency matrix reveals two distinct organizational phenomena: (1) <i>Consolidation:</i> Multiple formal departments merge into unified operational communities (e.g., Depts 0, 7, and 10 cohere predominantly within Community C1). (2) <i>Fragmentation:</i> Large administrative units split across functional communication clusters (e.g., Dept 4 members are partitioned across Communities C0 and C2). Informal exchange reflects operational collaboration rather than designated hierarchy.",
         body_style
     ))
+    story.append(Spacer(1, 6))
 
-    # PageBreak to Page 7
-    story.append(PageBreak())
-
-    # =========================================================================
-    # PAGE 7: SECTION 4 PART C (RQ3 RESULTS, FIGURE 5, TABLE 3)
-    # =========================================================================
-    story.append(Paragraph("4 Evaluation and results (continued)", h1_style))
-    story.append(Paragraph(
-        "<b>RQ3 Results: Central Individuals as Boundary Spanners:</b> Partitioning nodes into the Top 10% PageRank tier (<i>N</i> = 101) and Remaining 90% tier (<i>N</i> = 904) reveals marked differences in cross-community connectivity:",
-        body_style
-    ))
-    story.append(Paragraph("• <b>Cross-Community Connections Count:</b> Top 10% individuals maintain a mean of <b>67.88</b> cross-community edges (median 59.0) vs. <b>7.94</b> (median 4.0) for remaining nodes—an <b>8.55&times; higher volume</b> (Mann-Whitney <i>U</i> = 88,970.0, <i>p</i> = 6.88 &times; 10<sup>&minus;56</sup>).", bullet_style))
-    story.append(Paragraph("• <b>Cross-Community Connection Fraction:</b> Top 10% dedicate a mean of <b>55.79%</b> of their links outside their primary community (median 58.10%) vs. <b>26.56%</b> (median 25.00%) for remaining non-isolated nodes (<i>N</i> = 885), more than double the proportion (Mann-Whitney <i>U</i> = 77,037.5, <i>p</i> = 4.59 &times; 10<sup>&minus;33</sup>).", bullet_style))
+    rq3_intro_block = KeepTogether([
+        Paragraph(
+            "<b>RQ3 Results: Central Individuals as Boundary Spanners:</b> Partitioning nodes into the Top 10% PageRank tier (<i>N</i> = 101) and Remaining 90% tier (<i>N</i> = 904) reveals marked differences in cross-community connectivity:",
+            body_style
+        ),
+        Paragraph("• <b>Cross-Community Connections Count:</b> Top 10% individuals maintain a mean of <b>67.88</b> cross-community edges (median 59.0) vs. <b>7.94</b> (median 4.0) for remaining nodes—an <b>8.55&times; higher volume</b> (Mann-Whitney <i>U</i> = 88,970.0, <i>p</i> = 6.88 &times; 10<sup>&minus;56</sup>).", bullet_style),
+        Paragraph("• <b>Cross-Community Connection Fraction:</b> Top 10% dedicate a mean of <b>55.79%</b> of their links outside their primary community (median 58.10%) vs. <b>26.56%</b> (median 25.00%) for remaining non-isolated nodes (<i>N</i> = 885), more than double the proportion (Mann-Whitney <i>U</i> = 77,037.5, <i>p</i> = 4.59 &times; 10<sup>&minus;33</sup>).", bullet_style),
+    ])
+    story.append(rq3_intro_block)
     story.append(Spacer(1, 4))
     story.append(Paragraph(
         "<b>Degree Confounding and Stratified Analysis:</b> Total undirected degree is a major confounder, correlating strongly with PageRank (<i>&rho;</i><sub><i>s</i></sub> = 0.9614) and cross-community count (<i>&rho;</i><sub><i>s</i></sub> = 0.9155). Controlling globally for degree yields a slightly negative partial rank correlation (Partial <i>&rho;</i><sub><i>s</i></sub> = &minus;0.1803, <i>p</i> = 1.15 &times; 10<sup>&minus;8</sup>) because receiving concentrated endorsements inside dense core clusters boosts PageRank without boundary spanning. However, degree stratification clarifies this dynamic: exactly <b>100 of the 101 Top 10% PageRank nodes (99.0%) reside in the highest degree quartile Q4</b> (<i>d</i> &ge; 45, <i>N</i> = 247). Within Q4, Top 10% PageRank nodes exhibit a higher mean cross-community count (<b>68.56 vs. 25.17</b>, <i>p</i> = 2.10 &times; 10<sup>&minus;27</sup>) and a higher cross-boundary fraction (<b>56.34% vs. 41.30%</b>, <i>p</i> = 5.69 &times; 10<sup>&minus;12</sup>). While PageRank correlates with boundary connectivity among active individuals, total degree remains a substantial confounder, and within-quartile comparisons do not entirely eliminate residual degree variance.",
@@ -640,11 +624,10 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     ])
     story.append(t3_block)
 
-    # PageBreak to Page 8
-    story.append(PageBreak())
+    story.append(Spacer(1, 10))
 
     # =========================================================================
-    # PAGE 8: SECTION 5 & SECTION 6
+    # SECTION 5: INSIGHTS AND LIMITATIONS
     # =========================================================================
     story.append(Paragraph("5 Insights and limitations", h1_style))
     story.append(Paragraph(
@@ -655,11 +638,13 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     story.append(Paragraph("1. <i>Network Autocorrelation & Descriptive Inference:</i> Dyadic reciprocity (71.12%) and transitivity violate i.i.d. assumptions; reported Mann-Whitney U test <i>p</i>-values are descriptive indicators of distributional separation rather than formal causal proofs.", bullet_style))
     story.append(Paragraph("2. <i>Binary vs. Weighted Edges:</i> Edge weights, frequencies, and message contents are unobserved; single administrative broadcasts are topologically indistinguishable from frequent collaboration.", bullet_style))
     story.append(Paragraph("3. <i>Degree Confounding & Non-Causal Embedding:</i> Total degree strongly confounds PageRank (<i>&rho;</i><sub><i>s</i></sub> = 0.9614) and boundary ties (<i>&rho;</i><sub><i>s</i></sub> = 0.9155); quartile stratification narrows but does not eliminate residual degree variance. Network positions reflect structural embedding, not formal authority, effectiveness, or deliberate brokerage intent.", bullet_style))
-    story.append(Spacer(1, 3))
-    story.append(Paragraph(
-        "<b>Summary Conclusion:</b> In summary, informal communication in this research institution systematically transcends administrative departmental lines. PageRank identifies individuals commanding structural prestige through concentrated endorsements, while Louvain modularity optimization reveals organic, multi-departmental clusters governing operational exchange. Highly ranked individuals frequently exhibit substantial cross-community connectivity, though this relationship is substantially mediated by total degree. Assessing boundary spanning requires joint evaluation of prestige centrality, community partitions, and degree distributions.",
-        body_style
-    ))
+    story.append(Spacer(1, 4))
+    story.append(KeepTogether([
+        Paragraph(
+            "<b>Summary Conclusion:</b> In summary, informal communication in this research institution systematically transcends administrative departmental lines. PageRank identifies individuals commanding structural prestige through concentrated endorsements, while Louvain modularity optimization reveals organic, multi-departmental clusters governing operational exchange. Highly ranked individuals frequently exhibit substantial cross-community connectivity, though this relationship is substantially mediated by total degree. Assessing boundary spanning requires joint evaluation of prestige centrality, community partitions, and degree distributions.",
+            body_style
+        )
+    ]))
     story.append(Spacer(1, 4))
 
     story.append(Paragraph("6 Reproducibility information", h1_style))
