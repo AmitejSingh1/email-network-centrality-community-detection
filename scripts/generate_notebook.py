@@ -64,6 +64,7 @@ We configure reproducible random seeds, plotting styles, and import required sci
     cells.append(nbf.v4.new_code_cell("""import gzip
 import hashlib
 import os
+import shutil
 import urllib.request
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -114,7 +115,16 @@ def verify_or_download_file(file_info: dict, target_dir: Path) -> Path:
     filepath = target_dir / file_info["filename"]
     if not filepath.exists():
         print(f"Downloading {file_info['filename']} from SNAP...")
-        urllib.request.urlretrieve(file_info["url"], filepath)
+        try:
+            req = urllib.request.Request(
+                file_info["url"],
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            )
+            with urllib.request.urlopen(req) as response, open(filepath, "wb") as out_file:
+                shutil.copyfileobj(response, out_file)
+        except Exception as e:
+            print(f"Request failed ({e}), attempting urlretrieve fallback...")
+            urllib.request.urlretrieve(file_info["url"], filepath)
         print(f"Downloaded {file_info['filename']} ({filepath.stat().st_size:,} bytes).")
     
     # Calculate SHA-256
@@ -156,6 +166,7 @@ print(f"Audited department labels: {len(node_departments)} labeled nodes across 
 # 2. Audit raw edges
 raw_edge_rows = 0
 self_loops_count = 0
+raw_edges = []
 edges_set = set()
 duplicate_edges = 0
 
@@ -170,7 +181,9 @@ with gzip.open(edge_gz_path, "rt", encoding="utf-8") as f:
             self_loops_count += 1
         if (u, v) in edges_set:
             duplicate_edges += 1
-        edges_set.add((u, v))
+        else:
+            edges_set.add((u, v))
+            raw_edges.append((u, v))
 
 print(f"Raw edge audit: {raw_edge_rows:,} rows, {duplicate_edges} duplicate edges, {self_loops_count} self-loops.")
 
@@ -178,13 +191,13 @@ print(f"Raw edge audit: {raw_edge_rows:,} rows, {duplicate_edges} duplicate edge
 G_raw = nx.DiGraph()
 G_analysis = nx.DiGraph()
 
-# Add all 1,005 labeled nodes
-for node, dept in node_departments.items():
+# Add all 1,005 labeled nodes in sorted order
+for node, dept in sorted(node_departments.items()):
     G_raw.add_node(node, department=dept)
     G_analysis.add_node(node, department=dept)
 
-# Add edges
-for u, v in edges_set:
+# Add edges preserving exact file sequence
+for u, v in raw_edges:
     G_raw.add_edge(u, v)
     if u != v:
         G_analysis.add_edge(u, v)
@@ -468,6 +481,7 @@ mod_dept = nx.community.modularity(G_undir, dept_communities, resolution=1.0)
 # Department conductance
 dept_conds = [nx.conductance(G_undir, s) for s in dept_communities if sum(G_undir.degree(u) for u in s) > 0 and len(s) < G_undir.number_of_nodes()]
 
+nodes = sorted(list(G_undir.nodes()))
 dept_labels_list = [G_undir.nodes[n]["department"] for n in nodes]
 comm_labels_list = [node_to_comm[n] for n in nodes]
 nmi = normalized_mutual_info_score(dept_labels_list, comm_labels_list)

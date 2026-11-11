@@ -23,6 +23,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm, mm
 from reportlab.pdfgen import canvas
 from reportlab.platypus import (
+    Flowable,
     HRFlowable,
     Image,
     KeepTogether,
@@ -35,8 +36,20 @@ from reportlab.platypus import (
 )
 
 
+class MarkReferencesPage(Flowable):
+    """Zero-size flowable to dynamically record the references start page."""
+
+    def wrap(self, availWidth, availHeight):
+        return 0, 0
+
+    def draw(self):
+        NumberedCanvas.references_start_page = self.canv._pageNumber
+
+
 class NumberedCanvas(canvas.Canvas):
     """Two-pass canvas to dynamically compute and print total page count."""
+
+    references_start_page = 9999
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,10 +90,10 @@ class NumberedCanvas(canvas.Canvas):
 
         # Running Footer (all pages)
         page_str = f"Page {self._pageNumber} of {page_count}"
-        if self._pageNumber <= 8:
-            page_label = f"{page_str} (Main Report)"
-        else:
+        if self._pageNumber >= NumberedCanvas.references_start_page:
             page_label = f"{page_str} (References — Excluded from 8-Page Limit)"
+        else:
+            page_label = f"{page_str} (Main Report)"
 
         self.drawString(56.7, 36, "National University of Singapore — Master of Science in Data Science")
         self.drawRightString(595.27 - 56.7, 36, page_label)
@@ -443,28 +456,43 @@ def build_pdf_report(output_filename: str = "report.pdf") -> Path:
         "<br/>3. <i>Non-Causal Interpretations:</i> Network position reflects structural embedding, not formal organizational authority, leadership effectiveness, or deliberate brokerage intent. Case studies represent structural archetypes, not verified organizational roles.",
         body_style
     ))
+    story.append(Paragraph(
+        "<b>Summary Conclusion:</b> In summary, this investigation demonstrates that communication in complex knowledge institutions systematically transcends designated departmental lines. Centrality and community detection techniques provide complementary lenses: PageRank identifies individuals who command structural prominence through high-quality endorsements, while Louvain modularity optimization reveals organic, multi-departmental clusters that govern operational exchange. Crucially, structurally prominent individuals act primarily as inter-community boundary spanners—even after conditioning on high node degree—demonstrating that cross-cluster connectivity is an intrinsic property of institutional prominence.",
+        body_style
+    ))
 
     # =========================================================================
     # SECTION 6: REPRODUCIBILITY INFORMATION
     # =========================================================================
     story.append(Paragraph("6 Reproducibility information", h1_style))
     story.append(Paragraph(
-        "<b>Software and Hardware Environment:</b> Analysis executed under Python 3.10.6 on an AMD Ryzen 7 processor with 16 GB RAM (fully operable on $\\approx 8$ GB RAM laptops). Dependencies: NetworkX 3.4.2, SciPy 1.15.3, scikit-learn 1.5.2, pandas 2.3.3, NumPy 1.26.4, matplotlib 3.10.9, seaborn 0.13.2. Pinned versions are documented in <code>requirements.txt</code>.",
+        "<b>Dataset Acquisition & Cryptographic Hashes:</b> The primary data source is the Stanford Network Analysis Platform (SNAP) Email-Eu-core benchmark. Raw files were downloaded from official URLs: "
+        "<br/>• Edges: <code>https://snap.stanford.edu/data/email-Eu-core.txt.gz</code> (SHA-256: <code>4b47acdb80197b085fe63c819c357ae488131ee904ed93d1b219a68b0f9e245f</code>) "
+        "<br/>• Department Labels: <code>https://snap.stanford.edu/data/email-Eu-core-department-labels.txt.gz</code> (SHA-256: <code>e5abe5b4581a480032a63adcf2576c161785f45692642c6ebb0b1276f0f33669</code>).",
         body_style
     ))
     story.append(Paragraph(
-        "<b>Random Seeds and Determinism:</b> Random seed 42 is fixed across all stochastic components (Louvain optimization, NumPy random state). Tie-breaking in rankings follows a strict deterministic protocol (sorting by score descending, then node ID ascending).",
+        "<b>Preprocessing Pipeline:</b> Dual graph representations were constructed: $G_{\\text{raw}}$ retains all 1,005 nodes, 25,571 directed edges, and 642 self-loops. $G_{\\text{analysis}}$ excludes all 642 self-loops, preserving all 1,005 nodes and 24,929 interpersonal directed edges; 19 singleton nodes with only self-loops are preserved as degree-0 nodes with their official ground-truth department labels. The unweighted undirected projection $G_{\\text{undirected}}$ preserves all 1,005 nodes and contains 16,064 undirected edges (8,865 reciprocal pairs, 71.12% reciprocity).",
         body_style
     ))
     story.append(Paragraph(
-        "<b>Standalone Notebook:</b> The accompanying <code>analysis.ipynb</code> notebook is completely self-contained, importing no local modules. It automatically downloads raw data from SNAP, verifies SHA-256 checksums, executes all analyses, and regenerates all reported tables and figures from a fresh kernel.",
+        "<b>Software and Computing Environment:</b> All analyses were executed under Python 3.10.6 on standard commodity hardware (AMD Ryzen / Intel x86_64, operable on $\\approx 8$ GB RAM laptops). Exact pinned library versions specified in <code>requirements.txt</code>: NetworkX 3.4.2, SciPy 1.15.3, scikit-learn 1.5.2, pandas 2.3.3, NumPy 1.26.4, matplotlib 3.10.9, seaborn 0.13.2.",
+        body_style
+    ))
+    story.append(Paragraph(
+        "<b>Algorithmic Parameters & Random Seeds:</b> PageRank was computed using damping factor $d = 0.85$, uniform personalization, NetworkX dangling mass redistribution, and convergence tolerance $10^{-6}$. Louvain modularity optimization was performed with resolution $\\gamma = 1.0$ and fixed random seed 42. Deterministic tie-breaking is enforced throughout by sorting by metric descending, then node ID ascending.",
+        body_style
+    ))
+    story.append(Paragraph(
+        "<b>Execution Instructions:</b> The accompanying <code>analysis.ipynb</code> notebook is completely self-contained and imports no local <code>src/</code> modules. It automatically downloads the raw dataset from SNAP if absent, verifies SHA-256 checksums, executes all analyses, and reproduces all figures and numerical tables from a fresh kernel in under 30 seconds.",
         body_style
     ))
 
     # =========================================================================
     # REFERENCES (EXCLUDED FROM 8-PAGE LIMIT PER OFFICIAL SPECIFICATIONS)
     # =========================================================================
-    story.append(PageBreak())  # Strictly placed on page 9 (excluded from 8-page main report)
+    story.append(PageBreak())  # Strictly placed outside the main report page limit
+    story.append(MarkReferencesPage())
     story.append(Paragraph("References", h1_style))
     story.append(Paragraph("<i>Note: Per official DSA5101 instructions, the reference list is excluded from the eight-page limit. Appendices are not included.</i>", caption_style))
     story.append(Spacer(1, 4))
