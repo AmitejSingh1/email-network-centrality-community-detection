@@ -15,9 +15,10 @@ def main():
     doc = pymupdf.open(str(pdf_path))
     total_pages = len(doc)
     print(f"Total pages in document: {total_pages}")
-    if total_pages != 8:
-        print(f"FAIL: Expected exactly 8 pages, got {total_pages}")
-        sys.exit(1)
+    # Main report is 8 pages (Sections 1-6) + 1 page for References (excluded from 8-page limit)
+    if total_pages != 9:
+        print(f"FAIL: Expected exactly 9 pages (8 main report + 1 references), got {total_pages}")
+        all_passed = False
 
     # Printable area:
     # A4 = 595.27 x 841.89 pt
