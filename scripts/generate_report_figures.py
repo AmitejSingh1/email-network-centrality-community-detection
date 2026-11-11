@@ -1,13 +1,12 @@
 """Generate publication-quality, high-legibility figures for the DSA5101 research report.
 
-Tailored specifically for A4 report width (6.69 inches / 481.9 pt) with 300 DPI resolution,
-large typography (11-13 pt), clean high-contrast palettes, and clear annotations.
+Tailored specifically for A4 report width (6.69 inches / 481.88 pt) with 300 DPI resolution,
+rigorous constrained_layout management, non-overlapping annotations, distinct markers, and clean typography.
 """
 
 from __future__ import annotations
 
 import gzip
-from collections import Counter, defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -16,25 +15,22 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 import seaborn as sns
-from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 # Output directory
 FIG_DIR = Path("reports/figures")
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Styling configuration
-plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
-plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Arial", "Helvetica"]
-plt.rcParams["axes.edgecolor"] = "#2D3748"
-plt.rcParams["axes.linewidth"] = 0.9
-plt.rcParams["axes.titlesize"] = 11
-plt.rcParams["axes.titleweight"] = "bold"
-plt.rcParams["axes.labelsize"] = 10
-plt.rcParams["axes.labelweight"] = "bold"
-plt.rcParams["xtick.labelsize"] = 9
-plt.rcParams["ytick.labelsize"] = 9
-plt.rcParams["legend.fontsize"] = 8.5
-plt.rcParams["figure.titlesize"] = 12
+plt.rcParams.update({
+    "font.sans-serif": ["DejaVu Sans", "Helvetica", "Arial"],
+    "font.family": "sans-serif",
+    "mathtext.fontset": "dejavusans",
+    "figure.autolayout": False,
+    "axes.edgecolor": "#4A5568",
+    "axes.linewidth": 0.8,
+    "grid.color": "#E2E8F0",
+    "grid.linewidth": 0.6,
+})
 
 DATA_DIR = Path("data/raw")
 edge_gz = DATA_DIR / "email-Eu-core.txt.gz"
@@ -58,6 +54,7 @@ with gzip.open(edge_gz, "rt", encoding="utf-8") as f:
                 seen.add((u, v))
                 raw_edges.append((u, v))
 
+# Build graph representations
 G_raw = nx.DiGraph()
 G_analysis = nx.DiGraph()
 for n in sorted(node_departments.keys()):
@@ -121,39 +118,43 @@ cent_df["cross_community_fraction"] = [cross_fractions[n] for n in cent_df["node
 # FIGURE 1: Degree Distributions (Linear + Log-Log CCDF)
 # =============================================================================
 def make_fig1():
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.7), dpi=300)
+    # Width: 6.69 inches matches printable width 481.88 pt
+    fig, axes = plt.subplots(1, 2, figsize=(6.69, 2.30), dpi=300, constrained_layout=True)
+
     in_degrees = np.array([d for _, d in G_analysis.in_degree()])
     out_degrees = np.array([d for _, d in G_analysis.out_degree()])
 
-    # Panel a: Histogram with clean binning & mean/median markers
-    bins = np.linspace(0, max(in_degrees.max(), out_degrees.max()), 35)
-    axes[0].hist(in_degrees, bins=bins, color="#2B6CB0", alpha=0.65, label=f"In-Degree (Med={np.median(in_degrees):.0f})", edgecolor="#1A365D", linewidth=0.5)
-    axes[0].hist(out_degrees, bins=bins, color="#DD6B20", alpha=0.55, label=f"Out-Degree (Med={np.median(out_degrees):.0f})", edgecolor="#7B341E", linewidth=0.5)
-    axes[0].axvline(np.mean(in_degrees), color="#2B6CB0", linestyle="--", linewidth=1.2, label=f"Mean = {np.mean(in_degrees):.1f}")
-    axes[0].set_xlabel("Directed Degree (Links)", fontsize=9.5, weight="bold")
-    axes[0].set_ylabel("Number of Individuals", fontsize=9.5, weight="bold")
-    axes[0].set_title("(a) Degree Frequency Histogram", fontsize=10.5, weight="bold", pad=6)
-    axes[0].legend(loc="upper right", frameon=True, fontsize=8, framealpha=0.9)
+    # Panel a: Linear Histogram
+    bins = np.linspace(0, max(in_degrees.max(), out_degrees.max()), 32)
+    axes[0].hist(in_degrees, bins=bins, color="#2B6CB0", alpha=0.65, label=f"In-Degree (Median={np.median(in_degrees):.0f})", edgecolor="#1A365D", linewidth=0.5)
+    axes[0].hist(out_degrees, bins=bins, color="#DD6B20", alpha=0.55, label=f"Out-Degree (Median={np.median(out_degrees):.0f})", edgecolor="#7B341E", linewidth=0.5)
+    axes[0].axvline(np.mean(in_degrees), color="#1A202C", linestyle="--", linewidth=1.2, label=f"Mean = {np.mean(in_degrees):.1f}")
+    axes[0].set_xlabel("Directed Degree (Number of Links)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_ylabel("Number of Individuals", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_title("(a) Degree Frequency Histogram", fontsize=9.6, weight="bold", pad=5)
+    axes[0].tick_params(axis="both", labelsize=7.5)
+    axes[0].legend(loc="upper right", frameon=True, fontsize=7.2, framealpha=0.92, edgecolor="#CBD5E0")
     axes[0].grid(True, linestyle=":", alpha=0.6)
+    axes[0].set_xlim(-5, 225)
 
     # Panel b: CCDF (Complementary Cumulative Distribution Function)
     for degs, label, col, marker in [(in_degrees, "In-Degree", "#2B6CB0", "o"), (out_degrees, "Out-Degree", "#DD6B20", "s")]:
         d_pos = np.sort(degs[degs > 0])
         ccdf = 1.0 - (np.arange(len(d_pos)) / len(d_pos))
-        axes[1].loglog(d_pos, ccdf, marker=marker, markersize=3.5, linestyle="none", color=col, alpha=0.75, label=label)
+        axes[1].loglog(d_pos, ccdf, marker=marker, markersize=3.0, linestyle="none", color=col, alpha=0.75, label=label)
 
     # Reference guide line showing heavy tail
-    x_ref = np.linspace(5, 150, 50)
-    y_ref = 3.0 * (x_ref ** -1.2)
-    axes[1].loglog(x_ref, y_ref, "k:", alpha=0.5, linewidth=1.0, label=r"Heavy-Tail Guide ($\propto k^{-1.2}$)")
+    x_ref = np.linspace(6, 160, 50)
+    y_ref = 3.2 * (x_ref ** -1.2)
+    axes[1].loglog(x_ref, y_ref, "k:", alpha=0.6, linewidth=1.1, label=r"Heavy-Tail Guide ($\propto k^{-1.2}$)")
 
-    axes[1].set_xlabel("Degree $k$ (Log Scale)", fontsize=9.5, weight="bold")
-    axes[1].set_ylabel(r"$P(X \geq k)$ (Log Scale)", fontsize=9.5, weight="bold")
-    axes[1].set_title("(b) Complementary Cumulative Distribution (CCDF)", fontsize=10.5, weight="bold", pad=6)
-    axes[1].legend(loc="lower left", frameon=True, fontsize=8, framealpha=0.9)
+    axes[1].set_xlabel("Degree $k$ (Log Scale)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_ylabel(r"$P(X \geq k)$ (Log Scale)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_title("(b) Complementary Cumulative Distribution (CCDF)", fontsize=9.6, weight="bold", pad=5)
+    axes[1].tick_params(axis="both", labelsize=7.5)
+    axes[1].legend(loc="lower left", frameon=True, fontsize=7.2, framealpha=0.92, edgecolor="#CBD5E0")
     axes[1].grid(True, which="both", linestyle=":", alpha=0.5)
 
-    plt.tight_layout()
     p = FIG_DIR / "fig1_degree_distributions_clean.png"
     plt.savefig(p, dpi=300, bbox_inches="tight")
     plt.close()
@@ -166,14 +167,29 @@ make_fig1()
 # FIGURE 2: Department Alignment & Homophily Enrichment
 # =============================================================================
 def make_fig2():
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.7), dpi=300)
-    
-    # Panel a: Department size distribution
+    fig, axes = plt.subplots(1, 2, figsize=(6.69, 2.30), dpi=300, constrained_layout=True)
+
+    # Panel a: Clean top 12 departments bar chart + Median reference line
     dept_sizes = pd.Series(list(node_departments.values())).value_counts().sort_values(ascending=False)
-    axes[0].bar(range(len(dept_sizes)), dept_sizes.values, color="#319795", edgecolor="#234E52", linewidth=0.6, width=0.8)
-    axes[0].set_xlabel("Department Rank (Ordered by Size)", fontsize=9.5, weight="bold")
-    axes[0].set_ylabel("Affiliated Members", fontsize=9.5, weight="bold")
-    axes[0].set_title(f"(a) Department Sizes ($N=42$, Max={dept_sizes.max()}, Min={dept_sizes.min()})", fontsize=10.5, weight="bold", pad=6)
+    top12 = dept_sizes.head(12)
+
+    labels = [f"D{d}" for d in top12.index]
+    vals = list(top12.values)
+
+    bars = axes[0].bar(range(len(labels)), vals, color="#2B6CB0", edgecolor="#1A365D", linewidth=0.6, width=0.65)
+    for bar in bars:
+        h = bar.get_height()
+        axes[0].text(bar.get_x() + bar.get_width()/2.0, h + 1.5, f"{h}", ha="center", va="bottom", fontsize=6.8, weight="bold")
+
+    axes[0].axhline(dept_sizes.median(), color="#DD6B20", linestyle="--", linewidth=1.1, label=f"Median = {dept_sizes.median():.1f}")
+    axes[0].set_xticks(range(len(labels)))
+    axes[0].set_xticklabels(labels, fontsize=7.2, weight="bold")
+    axes[0].set_xlabel("Department Identifier (Top 12 by Population)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_ylabel("Affiliated Members", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_title("(a) Department Size Distribution", fontsize=9.6, weight="bold", pad=5)
+    axes[0].set_ylim(0, 125)
+    axes[0].tick_params(axis="both", labelsize=7.5)
+    axes[0].legend(loc="upper right", fontsize=7.2, frameon=True, framealpha=0.92, edgecolor="#CBD5E0")
     axes[0].grid(True, axis="y", linestyle=":", alpha=0.6)
 
     # Panel b: Intra vs Inter communication
@@ -186,30 +202,33 @@ def make_fig2():
     p_null = sum(s * (s - 1) for s in dept_sizes) / (N * (N - 1))
     homophily_ratio = within_frac / p_null
 
-    categories = ["Within-Dept\n(Observed)", "Cross-Dept\n(Observed)", "Within-Dept\n(Null Model)"]
-    vals = [within_frac * 100, cross_frac * 100, p_null * 100]
-    bar_cols = ["#2B6CB0", "#DD6B20", "#718096"]
-    bars = axes[1].bar(categories, vals, color=bar_cols, edgecolor="#1A202C", linewidth=0.7, width=0.55)
+    # Ordered: Within Observed, Within Null Model, Cross Observed
+    categories = ["Within-Dept\n(Observed)", "Within-Dept\n(Null Model)", "Cross-Dept\n(Observed)"]
+    comp_vals = [within_frac * 100, p_null * 100, cross_frac * 100]
+    bar_cols = ["#2B6CB0", "#718096", "#DD6B20"]
+    bars2 = axes[1].bar(range(len(categories)), comp_vals, color=bar_cols, edgecolor="#1A202C", linewidth=0.6, width=0.55)
     
-    for bar, val in zip(bars, vals):
+    for bar, val in zip(bars2, comp_vals):
         y = bar.get_height()
-        axes[1].text(bar.get_x() + bar.get_width()/2.0, y + 1.5, f"{val:.1f}%", ha="center", va="bottom", weight="bold", fontsize=9)
+        axes[1].text(bar.get_x() + bar.get_width()/2.0, y + 1.5, f"{val:.1f}%", ha="center", va="bottom", weight="bold", fontsize=7.5)
 
-    # Annotation for homophily enrichment
+    # Clean non-overlapping annotation placed above null model bar (x=1) pointing to observed within bar (x=0)
     axes[1].annotate(
-        f"{homophily_ratio:.2f}× Enrichment\nAbove Null Baseline",
-        xy=(0, vals[0]), xytext=(0.5, 48),
-        arrowprops=dict(arrowstyle="->", color="#1A202C", lw=1.2),
-        ha="center", fontsize=8.5, weight="bold",
-        bbox=dict(boxstyle="round,pad=0.3", fc="#FEFCBF", ec="#B7791F", lw=0.8)
+        f"{homophily_ratio:.2f}× Enrichment\nOver Null Baseline",
+        xy=(0.15, 34.68), xytext=(0.85, 42.0),
+        arrowprops=dict(arrowstyle="->", color="#975A16", lw=1.2),
+        ha="center", fontsize=7.8, weight="bold",
+        bbox=dict(boxstyle="round,pad=0.25", fc="#FEFCBF", ec="#B7791F", lw=0.8)
     )
 
-    axes[1].set_ylabel("Share of Directed Links (%)", fontsize=9.5, weight="bold")
-    axes[1].set_title("(b) Departmental Communication Composition", fontsize=10.5, weight="bold", pad=6)
-    axes[1].set_ylim(0, 78)
+    axes[1].set_xticks(range(len(categories)))
+    axes[1].set_xticklabels(categories, fontsize=7.8, weight="bold")
+    axes[1].set_ylabel("Share of Directed Links (%)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_title("(b) Departmental Communication Composition", fontsize=9.6, weight="bold", pad=5)
+    axes[1].set_ylim(0, 80)
+    axes[1].tick_params(axis="y", labelsize=7.5)
     axes[1].grid(True, axis="y", linestyle=":", alpha=0.6)
 
-    plt.tight_layout()
     p = FIG_DIR / "fig2_department_homophily_clean.png"
     plt.savefig(p, dpi=300, bbox_inches="tight")
     plt.close()
@@ -222,48 +241,51 @@ make_fig2()
 # FIGURE 3: PageRank vs In-Degree Centrality Disagreements
 # =============================================================================
 def make_fig3():
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.85), dpi=300)
+    fig, axes = plt.subplots(1, 2, figsize=(6.69, 2.22), dpi=300, constrained_layout=True)
 
-    # Panel a: Scatter plot with regression line & key archetypes
+    # Panel a: Scatter plot with concise, non-overlapping callouts
     rho_s, _ = stats.spearmanr(cent_df["pagerank"], cent_df["in_degree"])
-    axes[0].scatter(cent_df["in_degree"], cent_df["pagerank"] * 1000, color="#4A5568", alpha=0.45, s=18, edgecolors="none")
+    axes[0].scatter(cent_df["in_degree"], cent_df["pagerank"] * 1000, color="#4A5568", alpha=0.40, s=14, edgecolors="none")
 
-    # Archetype highlights
+    # Archetype highlights with concise labels
     focal_nodes = [
-        (160, "#E53E3E", "Node 160 (PR Rank 1, In-Deg Rank 1)", (180, 6.2)),
-        (451, "#805AD5", "Node 451 (+622 PR Boost, In-Deg 8)", (30, 3.8)),
-        (83,  "#D69E2E", "Node 83 (In-Deg Rank 45, PR Rank 56)", (105, 1.8)),
+        (160, "#E53E3E", "Node 160\nRank 1 (Both)", (145, 6.4)),
+        (451, "#805AD5", "Node 451\nΔR = +622", (28, 4.3)),
+        (83,  "#D69E2E", "Node 83\nIn-Deg Diluted", (110, 1.3)),
     ]
     for nid, color, label, xytext in focal_nodes:
         row = cent_df[cent_df["node_id"] == nid].iloc[0]
         x, y = row["in_degree"], row["pagerank"] * 1000
-        axes[0].scatter(x, y, color=color, s=70, edgecolors="#1A202C", linewidth=1.2, zorder=6)
+        axes[0].scatter(x, y, color=color, s=55, edgecolors="#1A202C", linewidth=1.0, zorder=6)
         axes[0].annotate(
             label, xy=(x, y), xytext=xytext,
-            arrowprops=dict(arrowstyle="->", color=color, lw=1.1),
-            fontsize=8, weight="bold", color="#1A202C",
-            bbox=dict(boxstyle="round,pad=0.2", fc="white", ec=color, lw=0.9, alpha=0.95)
+            arrowprops=dict(arrowstyle="->", color=color, lw=1.0),
+            fontsize=7.2, weight="bold", color="#1A202C",
+            bbox=dict(boxstyle="round,pad=0.22", fc="white", ec=color, lw=0.8, alpha=0.95)
         )
 
-    axes[0].set_xlabel("In-Degree (Incoming Senders)", fontsize=9.5, weight="bold")
-    axes[0].set_ylabel(r"PageRank Score ($\times 10^{-3}$)", fontsize=9.5, weight="bold")
-    axes[0].set_title(f"(a) Global Centrality ($\\rho_s = {rho_s:.4f}$)", fontsize=10.5, weight="bold", pad=6)
+    axes[0].set_xlabel("In-Degree (Incoming Senders)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_ylabel(r"PageRank Score ($\times 10^{-3}$)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_title(f"(a) Global Centrality (Spearman $\\rho_s = {rho_s:.4f}$)", fontsize=9.6, weight="bold", pad=5)
+    axes[0].tick_params(axis="both", labelsize=7.5)
+    axes[0].set_xlim(-5, 230)
+    axes[0].set_ylim(-0.2, 8.2)
     axes[0].grid(True, linestyle=":", alpha=0.6)
 
-    # Panel b: Rank shifts for top 20 PageRank individuals
-    top20 = cent_df.head(20).copy()
-    x_pos = np.arange(len(top20))
-    shift_colors = ["#38A169" if s >= 0 else "#E53E3E" for s in top20["rank_difference"]]
-    axes[1].bar(x_pos, top20["rank_difference"], color=shift_colors, edgecolor="#1A202C", linewidth=0.5, width=0.65)
-    axes[1].axhline(0, color="#1A202C", linestyle="-", linewidth=0.8)
-    axes[1].set_xticks(x_pos)
-    axes[1].set_xticklabels(top20["node_id"], rotation=90, fontsize=7.5, weight="bold")
-    axes[1].set_xlabel("Node ID (Top 20 PageRank Order)", fontsize=9.5, weight="bold")
-    axes[1].set_ylabel("Rank Shift (In-Degree Rank - PR Rank)", fontsize=9.5, weight="bold")
-    axes[1].set_title("(b) Top-Tier Rank Shifts ($\Delta R$)", fontsize=10.5, weight="bold", pad=6)
-    axes[1].grid(True, axis="y", linestyle=":", alpha=0.6)
+    # Panel b: Clean horizontal bar chart of rank shifts for Top 15 PageRank individuals
+    top15 = cent_df.head(15).copy().sort_values(by="pagerank_rank_unique", ascending=False)
+    y_pos = np.arange(len(top15))
+    shift_colors = ["#38A169" if s >= 0 else "#E53E3E" for s in top15["rank_difference"]]
 
-    plt.tight_layout()
+    axes[1].barh(y_pos, top15["rank_difference"], color=shift_colors, edgecolor="#1A202C", linewidth=0.5, height=0.65)
+    axes[1].axvline(0, color="#1A202C", linestyle="-", linewidth=0.8)
+    axes[1].set_yticks(y_pos)
+    axes[1].set_yticklabels([f"Node {nid} (PR {r})" for nid, r in zip(top15["node_id"], top15["pagerank_rank_unique"])], fontsize=6.8, weight="bold")
+    axes[1].set_xlabel("Rank Shift ΔR (In-Degree Rank − PR Rank)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_title("(b) Rank Shifts for Top 15 PageRank Individuals", fontsize=9.6, weight="bold", pad=5)
+    axes[1].tick_params(axis="x", labelsize=7.5)
+    axes[1].grid(True, axis="x", linestyle=":", alpha=0.6)
+
     p = FIG_DIR / "fig3_pagerank_vs_indegree_clean.png"
     plt.savefig(p, dpi=300, bbox_inches="tight")
     plt.close()
@@ -276,18 +298,21 @@ make_fig3()
 # FIGURE 4: Community-Department Alignment (Contingency Matrix)
 # =============================================================================
 def make_fig4():
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.9), dpi=300, gridspec_kw={"width_ratios": [1.1, 1.3]})
+    fig, axes = plt.subplots(1, 2, figsize=(6.69, 2.05), dpi=300, gridspec_kw={"width_ratios": [1.0, 1.25]}, constrained_layout=True)
 
     # Panel a: Community sizes bar chart
     c_sizes = [len(c) for c in non_trivial_comms]
-    bars = axes[0].bar([f"C{i}" for i in range(len(c_sizes))], c_sizes, color="#2B6CB0", edgecolor="#1A365D", linewidth=0.6, width=0.7)
+    comm_names = [f"C{i}" for i in range(len(c_sizes))]
+    bars = axes[0].bar(comm_names, c_sizes, color="#2B6CB0", edgecolor="#1A365D", linewidth=0.6, width=0.65)
     for bar in bars:
         h = bar.get_height()
-        axes[0].text(bar.get_x() + bar.get_width()/2.0, h + 2.5, f"{h}", ha="center", va="bottom", fontsize=8, weight="bold")
-    axes[0].set_xlabel("Louvain Community ($\gamma=1.0$)", fontsize=9.5, weight="bold")
-    axes[0].set_ylabel("Member Population", fontsize=9.5, weight="bold")
-    axes[0].set_title("(a) Cohesive Community Sizes", fontsize=10.5, weight="bold", pad=6)
-    axes[0].set_ylim(0, 215)
+        axes[0].text(bar.get_x() + bar.get_width()/2.0, h + 2.0, f"{h}", ha="center", va="bottom", fontsize=6.8, weight="bold")
+
+    axes[0].set_xlabel("Louvain Community ($\gamma=1.0$)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_ylabel("Member Population", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_title("(a) Cohesive Community Sizes", fontsize=9.6, weight="bold", pad=5)
+    axes[0].set_ylim(0, 220)
+    axes[0].tick_params(axis="both", labelsize=7.5)
     axes[0].grid(True, axis="y", linestyle=":", alpha=0.6)
 
     # Panel b: Overlap contingency matrix for top 8 departments
@@ -297,12 +322,25 @@ def make_fig4():
     contingency = pd.crosstab(pd.Series(dept_labels, name="Dept"), pd.Series(comm_labels, name="Comm"))
     sub_ct = contingency.loc[top_depts, list(range(len(non_trivial_comms)))]
 
-    sns.heatmap(sub_ct, annot=True, fmt="d", cmap="Blues", cbar=False, ax=axes[1], linewidths=0.5, linecolor="#E2E8F0", annot_kws={"size": 7.5, "weight": "bold"})
-    axes[1].set_xlabel("Louvain Community ID", fontsize=9.5, weight="bold")
-    axes[1].set_ylabel("Official Department ID", fontsize=9.5, weight="bold")
-    axes[1].set_title("(b) Department-Community Overlap", fontsize=10.5, weight="bold", pad=6)
+    # Explicit labels
+    sub_ct.index = [f"Dept {d}" for d in sub_ct.index]
+    sub_ct.columns = [f"C{c}" for c in sub_ct.columns]
 
-    plt.tight_layout()
+    sns.heatmap(
+        sub_ct, annot=True, fmt="d", cmap="Blues", cbar=True,
+        cbar_kws={"label": "Members", "pad": 0.03, "shrink": 0.85},
+        ax=axes[1], linewidths=0.5, linecolor="#E2E8F0",
+        annot_kws={"size": 6.8, "weight": "bold"}
+    )
+    axes[1].figure.axes[-1].yaxis.label.set_size(7.5)
+    axes[1].figure.axes[-1].yaxis.label.set_weight("bold")
+    axes[1].figure.axes[-1].tick_params(labelsize=6.8)
+
+    axes[1].set_xlabel("Louvain Community", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_ylabel("Official Department", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_title("(b) Department-Community Overlap", fontsize=9.6, weight="bold", pad=5)
+    axes[1].tick_params(axis="both", labelsize=7.2)
+
     p = FIG_DIR / "fig4_community_department_clean.png"
     plt.savefig(p, dpi=300, bbox_inches="tight")
     plt.close()
@@ -315,7 +353,7 @@ make_fig4()
 # FIGURE 5: Integrated Centrality & Cross-Community Connectivity
 # =============================================================================
 def make_fig5():
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.85), dpi=300)
+    fig, axes = plt.subplots(1, 2, figsize=(6.69, 2.05), dpi=300, constrained_layout=True)
 
     # Panel a: PageRank vs Cross-Community Fraction
     valid_df = cent_df.dropna(subset=["cross_community_fraction"]).copy()
@@ -323,53 +361,60 @@ def make_fig5():
         valid_df["cross_community_fraction"] * 100,
         valid_df["pagerank"] * 1000,
         c=valid_df["total_degree"],
-        cmap="viridis", s=22, alpha=0.7, edgecolors="none"
+        cmap="viridis", s=16, alpha=0.65, edgecolors="none"
     )
-    cbar = fig.colorbar(scatter, ax=axes[0], pad=0.02)
-    cbar.set_label("Undirected Degree", fontsize=8.5, weight="bold")
-    cbar.ax.tick_params(labelsize=8)
+    cbar = fig.colorbar(scatter, ax=axes[0], pad=0.02, shrink=0.88)
+    cbar.set_label("Undirected Degree", fontsize=7.5, weight="bold")
+    cbar.ax.tick_params(labelsize=6.8)
 
-    # Annotate archetypes
+    # Annotate archetypes with distinct markers and separated coordinates
     archetypes = [
-        (160, "#E53E3E", "Node 160\n(Global Spanner)", (65, 6.8)),
-        (451, "#805AD5", "Node 451\n(Internal Hub)", (8, 3.8)),
-        (644, "#319795", "Node 644\n(Peripheral Bridge)", (65, 1.2)),
+        (160, "#E53E3E", "*", 110, "Node 160\nGlobal Spanner", (46, 6.5)),
+        (451, "#805AD5", "D", 50, "Node 451\nInternal Hub", (12, 4.0)),
+        (644, "#319795", "^", 50, "Node 644\nPeripheral Bridge", (50, 1.4)),
     ]
-    for nid, col, label, xytext in archetypes:
+    for nid, col, marker, sz, label, xytext in archetypes:
         r = valid_df[valid_df["node_id"] == nid].iloc[0]
         x, y = r["cross_community_fraction"] * 100, r["pagerank"] * 1000
-        axes[0].scatter(x, y, color=col, s=75, edgecolors="#1A202C", linewidth=1.2, zorder=6)
+        axes[0].scatter(x, y, color=col, marker=marker, s=sz, edgecolors="#1A202C", linewidth=1.0, zorder=6)
         axes[0].annotate(
             label, xy=(x, y), xytext=xytext,
-            arrowprops=dict(arrowstyle="->", color=col, lw=1.1),
-            fontsize=8, weight="bold", color="#1A202C",
-            bbox=dict(boxstyle="round,pad=0.2", fc="white", ec=col, lw=0.9, alpha=0.95)
+            arrowprops=dict(arrowstyle="->", color=col, lw=1.0),
+            fontsize=7.2, weight="bold", color="#1A202C",
+            bbox=dict(boxstyle="round,pad=0.22", fc="white", ec=col, lw=0.8, alpha=0.95)
         )
 
-    axes[0].set_xlabel("Cross-Community Edge Share (%)", fontsize=9.5, weight="bold")
-    axes[0].set_ylabel(r"PageRank Score ($\times 10^{-3}$)", fontsize=9.5, weight="bold")
-    axes[0].set_title("(a) Centrality vs. Boundary Spanning", fontsize=10.5, weight="bold", pad=6)
+    axes[0].set_xlabel("Cross-Community Edge Share (%)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_ylabel(r"PageRank Score ($\times 10^{-3}$)", fontsize=8.8, weight="bold", labelpad=3)
+    axes[0].set_title("(a) Centrality vs. Boundary Spanning", fontsize=9.6, weight="bold", pad=5)
+    axes[0].tick_params(axis="both", labelsize=7.5)
+    axes[0].set_xlim(-5, 105)
+    axes[0].set_ylim(-0.3, 8.2)
     axes[0].grid(True, linestyle=":", alpha=0.6)
 
     # Panel b: Degree Stratified Cross-Community Degree (Q1-Q4)
-    cent_df["degree_quartile"] = pd.qcut(cent_df["total_degree"], 4, labels=["Q1 (0-11)", "Q2 (12-25)", "Q3 (26-44)", "Q4 (45-345)"])
+    cent_df["degree_quartile"] = pd.qcut(
+        cent_df["total_degree"], 4,
+        labels=["Q1 (0-11)\nN=244", "Q2 (12-25)\nN=253", "Q3 (26-44)\nN=261", "Q4 (≥45)\nN=247"]
+    )
     cent_df["top_10_pr"] = cent_df["pagerank_rank_unique"] <= 101
 
     sns.boxplot(
         data=cent_df[cent_df["total_degree"] > 0],
         x="degree_quartile", y="cross_community_count", hue="top_10_pr",
         palette={False: "#CBD5E0", True: "#E53E3E"},
-        ax=axes[1], fliersize=2.0, linewidth=0.8, width=0.65
+        ax=axes[1], fliersize=1.6, linewidth=0.7, width=0.60
     )
-    axes[1].set_xlabel("Total Degree Stratum", fontsize=9.5, weight="bold")
-    axes[1].set_ylabel("Cross-Community Connections", fontsize=9.5, weight="bold")
-    axes[1].set_title("(b) Degree-Stratified Boundary Spanning", fontsize=10.5, weight="bold", pad=6)
-    
+    axes[1].set_xlabel("Undirected Degree Stratum", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_ylabel("Cross-Community Connections", fontsize=8.8, weight="bold", labelpad=3)
+    axes[1].set_title("(b) Degree-Stratified Boundary Spanning", fontsize=9.6, weight="bold", pad=5)
+    axes[1].tick_params(axis="both", labelsize=7.2)
+    axes[1].set_ylim(-8, 315)
+
     handles, _ = axes[1].get_legend_handles_labels()
-    axes[1].legend(handles, ["Remaining 90%", "Top 10% PageRank"], loc="upper left", fontsize=8, frameon=True, framealpha=0.9)
+    axes[1].legend(handles, ["Remaining 90%", "Top 10% PageRank"], loc="upper left", fontsize=7.2, frameon=True, framealpha=0.92, edgecolor="#CBD5E0")
     axes[1].grid(True, axis="y", linestyle=":", alpha=0.6)
 
-    plt.tight_layout()
     p = FIG_DIR / "fig5_integrated_centrality_clean.png"
     plt.savefig(p, dpi=300, bbox_inches="tight")
     plt.close()

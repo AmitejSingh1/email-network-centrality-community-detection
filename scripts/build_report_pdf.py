@@ -384,7 +384,7 @@ def build_pdf_report(output_filename: str = "report.pdf") -> Path:
     fig1_clean = Path("reports/figures/fig1_degree_distributions_clean.png")
     if fig1_clean.exists():
         fig1_block = KeepTogether([
-            Image(str(fig1_clean), width=printable_width, height=138),
+            Image(str(fig1_clean), width=printable_width, height=158),
             Paragraph("<b>Figure 1:</b> Exploratory degree distributions on <i>G</i><sub>analysis</sub>. (a) Linear in-degree and out-degree histograms (mean = 24.8, medians = 17 and 14). (b) Log-log complementary cumulative distribution function (CCDF) showing heavy-tailed communication activity.", caption_style)
         ])
         story.append(fig1_block)
@@ -478,8 +478,8 @@ def build_pdf_report(output_filename: str = "report.pdf") -> Path:
     fig2_clean = Path("reports/figures/fig2_department_homophily_clean.png")
     if fig2_clean.exists():
         fig2_block = KeepTogether([
-            Image(str(fig2_clean), width=printable_width, height=138),
-            Paragraph("<b>Figure 2:</b> Department organization and communication composition. Observed within-department edges (34.68%) exceed the uniform random ordered-pair null model (<i>p</i><sub>null</sub> = 4.67%) by 7.43&times;, confirming strong departmental homophily amidst dominant (65.32%) cross-department communication.", caption_style)
+            Image(str(fig2_clean), width=printable_width, height=162),
+            Paragraph("<b>Figure 2:</b> Department organization and communication composition. (a) Member populations of the 12 largest departments (Median = 14.5). (b) Observed within-department links (34.68%) exceed the uniform random null model baseline (<i>p</i><sub>null</sub> = 4.67%) by 7.43&times;, confirming strong departmental homophily amidst dominant (65.32%) cross-department communication.", caption_style)
         ])
         story.append(fig2_block)
 
@@ -502,8 +502,8 @@ def build_pdf_report(output_filename: str = "report.pdf") -> Path:
     fig3_clean = Path("reports/figures/fig3_pagerank_vs_indegree_clean.png")
     if fig3_clean.exists():
         fig3_block = KeepTogether([
-            Image(str(fig3_clean), width=printable_width, height=140),
-            Paragraph("<b>Figure 3:</b> PageRank vs. In-degree centrality on <i>G</i><sub>analysis</sub>. (a) Global scatter plot (<i>&rho;</i><sub><i>s</i></sub> = 0.9828) highlighting Node 160 (Rank 1), Node 451 (+622 PageRank boost), and Node 83 (in-degree diluted). (b) Rank shifts &Delta;<i>R</i> for the Top 20 individuals.", caption_style)
+            Image(str(fig3_clean), width=printable_width, height=153),
+            Paragraph("<b>Figure 3:</b> PageRank vs. in-degree centrality on <i>G</i><sub>analysis</sub>. (a) Global scatter plot (Spearman <i>&rho;</i><sub><i>s</i></sub> = 0.9828) highlighting Node 160 (Rank 1 consensus), Node 451 (+622 PageRank boost), and Node 83 (in-degree diluted). (b) Rank shifts &Delta;<i>R</i> = <i>R</i><sub>in</sub> &minus; <i>R</i><sub>PR</sub> for the Top 15 PageRank individuals.", caption_style)
         ])
         story.append(fig3_block)
         story.append(Spacer(1, 4))
@@ -553,7 +553,7 @@ def build_pdf_report(output_filename: str = "report.pdf") -> Path:
     fig4_clean = Path("reports/figures/fig4_community_department_clean.png")
     if fig4_clean.exists():
         fig4_block = KeepTogether([
-            Image(str(fig4_clean), width=printable_width, height=115),
+            Image(str(fig4_clean), width=348, height=111, hAlign="CENTER"),
             Paragraph("<b>Figure 4:</b> Community structure and department overlap. (a) Population of the 9 cohesive Louvain communities. (b) Department-community contingency matrix for the 8 largest departments, illustrating how departments consolidate into multi-departmental research groups while certain units fragment across communities.", caption_style)
         ])
         story.append(fig4_block)
@@ -575,7 +575,7 @@ def build_pdf_report(output_filename: str = "report.pdf") -> Path:
     fig5_clean = Path("reports/figures/fig5_integrated_centrality_clean.png")
     if fig5_clean.exists():
         fig5_block = KeepTogether([
-            Image(str(fig5_clean), width=printable_width, height=115),
+            Image(str(fig5_clean), width=363, height=111, hAlign="CENTER"),
             Paragraph("<b>Figure 5:</b> Integrated analysis of PageRank vs. boundary connectivity. (a) PageRank vs. cross-community connection share with degree colormap and annotated structural archetypes: Node 160 (Global Boundary Spanner), Node 451 (Internal Hub), and Node 644 (Peripheral Bridge). (b) Degree-stratified boundary spanning across quartiles Q1–Q4, demonstrating that Top 10% PageRank nodes maintain an advantage even when controlling for high degree.", caption_style)
         ])
         story.append(fig5_block)
