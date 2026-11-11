@@ -266,10 +266,10 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         "FigCaption",
         parent=styles["Normal"],
         fontName="Times-Italic",
-        fontSize=8.5,
-        leading=11.5,
+        fontSize=9.0,
+        leading=12.0,
         textColor=colors.HexColor("#2D3748"),
-        spaceBefore=7,  # 7-9 pt spacing between figure and caption
+        spaceBefore=8,  # 8 pt spacing between figure and caption
         spaceAfter=5,
         alignment=0,
     )
@@ -484,7 +484,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     story.append(KeepTogether([eq5_tbl, Spacer(1, 4)]))
 
     story.append(Paragraph(
-        "where <i>s</i><sub><i>d</i></sub> is the size of department <i>d</i> across the institution. For the Email-Eu-core department distribution, <i>p</i><sub>null</sub> = 4.67%. Comparing the observed within-department share (34.68%) against <i>p</i><sub>null</sub> quantifies the institutional homophily enrichment factor (7.43&times;).",
+        "where <i>s</i><sub><i>d</i></sub> is the size of department <i>d</i> across the institution. For the Email-Eu-core department distribution, <i>p</i><sub>null</sub> = 4.67%. Comparing the observed within-department directed communication links (8,645 of 24,929; 34.68%) and cross-department links (16,284; 65.32%) against <i>p</i><sub>null</sub> quantifies the institutional homophily enrichment factor (7.43&times;).",
         body_style
     ))
     story.append(Spacer(1, 14))  # 14 pt vertical spacing before Figure 2
@@ -548,8 +548,8 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
         [Paragraph("Partition Scheme", table_header), Paragraph("Clusters", table_header), Paragraph("Modularity (Q)", table_header), Paragraph("Median Cond (&phi;)", table_header), Paragraph("Mean Cond (&phi;)", table_header), Paragraph("NMI vs. Dept", table_header), Paragraph("ARI vs. Dept", table_header)],
         [Paragraph("Louvain Baseline (&gamma;=1.0, seed 42)", table_cell_bold), Paragraph("9 (+19 isolates)", table_cell), Paragraph("0.4130", table_cell), Paragraph("0.4201 (C6: 0.278)", table_cell), Paragraph("0.4475", table_cell), Paragraph("0.5946", table_cell), Paragraph("0.3505", table_cell)],
         [Paragraph("Official Departments (SNAP)", table_cell_bold), Paragraph("42 departments", table_cell), Paragraph("0.2880", table_cell), Paragraph("0.8644 (Dept 3: 0.30)", table_cell), Paragraph("0.7871", table_cell), Paragraph("1.0000 (Self)", table_cell), Paragraph("1.0000 (Self)", table_cell)],
-        [Paragraph("Louvain (&gamma;=0.8, Coarser)", table_cell), Paragraph("6 (+19 isolates)", table_cell), Paragraph("0.4105 (Q_obj: 0.459)", table_cell), Paragraph("0.3812", table_cell), Paragraph("0.4015", table_cell), Paragraph("0.5272", table_cell), Paragraph("0.2223", table_cell)],
-        [Paragraph("Louvain (&gamma;=1.2, Finer)", table_cell), Paragraph("10 (+19 isolates)", table_cell), Paragraph("0.4051 (Q_obj: 0.383)", table_cell), Paragraph("0.4410", table_cell), Paragraph("0.4628", table_cell), Paragraph("0.6247", table_cell), Paragraph("0.4321", table_cell)],
+        [Paragraph("Louvain (&gamma;=0.8, Coarser)", table_cell), Paragraph("6 (+19 isolates)", table_cell), Paragraph("0.4105 (Q_obj: 0.459)", table_cell), Paragraph("0.3523", table_cell), Paragraph("0.3515", table_cell), Paragraph("0.5272", table_cell), Paragraph("0.2223", table_cell)],
+        [Paragraph("Louvain (&gamma;=1.2, Finer)", table_cell), Paragraph("10 (+19 isolates)", table_cell), Paragraph("0.4051 (Q_obj: 0.383)", table_cell), Paragraph("0.5191", table_cell), Paragraph("0.4942", table_cell), Paragraph("0.6247", table_cell), Paragraph("0.4321", table_cell)],
     ]
     t2 = Table(t2_data, colWidths=[116, 60, 68, 75, 72, 45, 45.8])
     t2.setStyle(TableStyle([

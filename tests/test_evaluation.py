@@ -217,3 +217,47 @@ def test_real_dataset_degree_confounding(real_integrated_data):
     assert q4["q4_top10_mean_cross_fraction"] > q4["q4_rem_mean_cross_fraction"]
     assert q4["q4_mann_whitney_fraction"]["p_value"] < 1e-5
 
+
+def test_real_dataset_exact_case_study_metrics(real_integrated_data):
+    """Regression test ensuring exact case study metrics match the authoritative manifest."""
+    _, G_undir, _, _, df = real_integrated_data
+
+    # Node 160: Global Boundary Spanner
+    n160 = df[df["node_id"] == 160].iloc[0]
+    assert n160["department"] == 36
+    assert n160["comm_id"] == 4
+    assert n160["pagerank_rank_unique"] == 1
+    assert n160["in_degree"] == 211
+    assert n160["total_undirected_degree"] == 345
+    assert n160["internal_edges_count"] == 51
+    assert n160["cross_community_count"] == 294
+    assert round(n160["cross_community_fraction"] * 100, 2) == 85.22
+    ext_160 = len(set(df[df["node_id"] == v]["comm_id"].iloc[0] for v in G_undir.neighbors(160) if df[df["node_id"] == v]["comm_id"].iloc[0] != 4))
+    assert ext_160 == 8
+
+    # Node 451: Internal Hub
+    n451 = df[df["node_id"] == 451].iloc[0]
+    assert n451["department"] == 14
+    assert n451["comm_id"] == 6
+    assert n451["pagerank_rank_unique"] == 37
+    assert n451["in_degree"] == 8
+    assert n451["in_degree_rank_unique"] == 659
+    assert n451["in_degree_rank_unique"] - n451["pagerank_rank_unique"] == 622
+    assert n451["total_undirected_degree"] == 13
+    assert n451["internal_edges_count"] == 13
+    assert n451["cross_community_count"] == 0
+    assert n451["cross_community_fraction"] == 0.0
+
+    # Node 644: Peripheral Bridge
+    n644 = df[df["node_id"] == 644].iloc[0]
+    assert n644["department"] == 25
+    assert n644["comm_id"] == 7
+    assert n644["pagerank_rank_unique"] == 633
+    assert n644["in_degree"] == 11
+    assert n644["in_degree_rank_unique"] == 606
+    assert n644["total_undirected_degree"] == 15
+    assert n644["internal_edges_count"] == 2
+    assert n644["cross_community_count"] == 13
+    assert round(n644["cross_community_fraction"] * 100, 2) == 86.67
+
+
