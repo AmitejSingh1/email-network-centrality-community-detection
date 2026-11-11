@@ -1,0 +1,11 @@
+# Git attributes for DSA5101 project
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gz binary
+*.zip binary
+*.ipynb text eol=lf
+*.py text
+*.md text
+*.txt text
