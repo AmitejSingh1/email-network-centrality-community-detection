@@ -397,15 +397,31 @@ def make_fig5():
     axes[0].set_ylim(-0.3, 8.2)
     axes[0].grid(True, linestyle=":", alpha=0.6)
 
-    # Panel b: Degree Stratified Cross-Community Degree (Q1-Q4)
-    cent_df["degree_quartile"] = pd.qcut(
-        cent_df["total_degree"], 4,
-        labels=["Q1 (0-11)\nN=244", "Q2 (12-25)\nN=253", "Q3 (26-44)\nN=261", "Q4 (≥45)\nN=247"]
+    # Panel b: Degree Stratified Cross-Community Degree (Q1-Q4 over N=986 non-isolated nodes)
+    non_iso_df = cent_df[cent_df["total_degree"] > 0].copy()
+    non_iso_df["degree_q_code"] = pd.qcut(
+        non_iso_df["total_degree"], 4, labels=["Q1", "Q2", "Q3", "Q4"]
     )
-    cent_df["top_10_pr"] = cent_df["pagerank_rank_unique"] <= 101
+    q_labels_map = {}
+    for q in ["Q1", "Q2", "Q3", "Q4"]:
+        sub = non_iso_df[non_iso_df["degree_q_code"] == q]
+        d_min = int(sub["total_degree"].min())
+        d_max = int(sub["total_degree"].max())
+        n_q = len(sub)
+        if q == "Q4":
+            q_labels_map[q] = f"{q} (≥{d_min})\nN={n_q}"
+        else:
+            q_labels_map[q] = f"{q} ({d_min}–{d_max})\nN={n_q}"
+    ordered_labels = [q_labels_map[q] for q in ["Q1", "Q2", "Q3", "Q4"]]
+    non_iso_df["degree_quartile"] = pd.Categorical(
+        non_iso_df["degree_q_code"].map(q_labels_map),
+        categories=ordered_labels,
+        ordered=True,
+    )
+    non_iso_df["top_10_pr"] = non_iso_df["pagerank_rank_unique"] <= 101
 
     sns.boxplot(
-        data=cent_df[cent_df["total_degree"] > 0],
+        data=non_iso_df,
         x="degree_quartile", y="cross_community_count", hue="top_10_pr",
         palette={False: "#CBD5E0", True: "#E53E3E"},
         ax=axes[1], fliersize=1.6, linewidth=0.7, width=0.58

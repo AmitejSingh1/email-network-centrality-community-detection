@@ -283,7 +283,10 @@ def compare_raw_vs_analysis_pagerank(
     df_analysis["rank_analysis"] = np.arange(1, len(df_analysis) + 1)
 
     merged = pd.merge(df_raw, df_analysis, on="node_id")
-    rho, p_val = stats.spearmanr(merged["rank_raw"], merged["rank_analysis"])
+    # Use continuous PageRank scores (average tie-ranks) for standard Spearman correlation,
+    # avoiding arbitrary node-ID ordering among tied zero-degree/singleton nodes.
+    rho, p_val = stats.spearmanr(merged["score_raw"], merged["score_analysis"])
+    rho_unique, _ = stats.spearmanr(merged["rank_raw"], merged["rank_analysis"])
 
     top_k_comp: Dict[str, Any] = {}
     for k in k_values:
@@ -300,6 +303,7 @@ def compare_raw_vs_analysis_pagerank(
 
     return {
         "spearman_rho": float(rho),
+        "spearman_rho_unique_ranks": float(rho_unique),
         "p_value": float(p_val),
         "top_k_overlap": top_k_comp,
     }

@@ -47,7 +47,7 @@
     "top_20_jaccard": 0.739,
     "top_50_overlap_fraction": 0.92,
     "top_50_jaccard": 0.852,
-    "self_loop_robustness_spearman": 0.8732
+    "self_loop_robustness_spearman": 0.872
   },
   "louvain_results": {
     "total_communities": 28,

@@ -156,7 +156,7 @@ def test_real_dataset_self_loop_robustness(real_analysis_graph):
     G_raw, G_analysis = real_analysis_graph
     comp = compare_raw_vs_analysis_pagerank(G_raw, G_analysis, alpha=0.85, k_values=(10, 20, 50))
 
-    # Correlation is ~0.8732: self-loops artificially elevate peripheral nodes with reflexive loops
+    # Correlation is ~0.8720 (average tie-ranks on scores; ~0.8732 on deterministic unique ranks)
     assert 0.85 < comp["spearman_rho"] < 0.92
     # Top-k overlaps between raw and analysis models
     assert comp["top_k_overlap"]["top_10"]["overlap_fraction"] >= 0.70
