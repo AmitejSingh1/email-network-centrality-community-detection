@@ -552,7 +552,7 @@ def generate_report(output_filename: str = "report.pdf") -> Path:
     
     t2_block = KeepTogether([
         t2,
-        Paragraph("<b>Table 2:</b> Structural quality and department alignment across community detection configurations and official departments. Modularity <i>Q</i> is computed using the standard Newman-Girvan definition (&gamma;=1.0); resolution-adjusted objectives are <i>Q</i><sub>obj</sub> = 0.4590 (&gamma;=0.8) and <i>Q</i><sub>obj</sub> = 0.3832 (&gamma;=1.2). Mean conductances are 0.4475 (Louvain baseline, min 0.2780 in C6), 0.7871 (departments, min 0.3000 in Dept 3), 0.3515 (&gamma;=0.8), and 0.4942 (&gamma;=1.2).", caption_style)
+        Paragraph("<b>Table 2:</b> Structural quality and department alignment across community detection configurations and official departments. Modularity <i>Q</i> is computed using the standard Newman-Girvan definition (&gamma;=1.0); resolution-adjusted objectives are <i>Q</i><sub>obj</sub> = 0.4590 (&gamma;=0.8) and <i>Q</i><sub>obj</sub> = 0.3830 (&gamma;=1.2). Mean conductances are 0.4475 (Louvain baseline, min 0.2780 in C6), 0.7871 (departments, min 0.3000 in Dept 3), 0.3515 (&gamma;=0.8), and 0.4942 (&gamma;=1.2).", caption_style)
     ])
     story.append(t2_block)
     story.append(Spacer(1, 14))  # 14 pt vertical spacing before Figure 4
