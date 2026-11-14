@@ -16,15 +16,19 @@ if clean_dir.exists():
     shutil.rmtree(clean_dir)
 clean_dir.mkdir(parents=True)
 
-# Generate fresh notebook directly into clean_dir
-sys.path.insert(0, str(project_root))
-from scripts.generate_notebook import generate_analysis_notebook
+# Copy existing analysis.ipynb and requirements.txt directly into clean_dir
 nb_path = clean_dir / "analysis.ipynb"
-generate_analysis_notebook(nb_path)
-
-# Copy requirements.txt
+shutil.copy(project_root / "analysis.ipynb", nb_path)
 shutil.copy(project_root / "requirements.txt", clean_dir / "requirements.txt")
 print("Clean-room setup complete with strictly analysis.ipynb and requirements.txt.")
+
+# Set Windows Selector event loop policy if needed
+import asyncio
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    except Exception:
+        pass
 
 # Execute notebook inside clean_dir
 with open(nb_path, "r", encoding="utf-8") as f:

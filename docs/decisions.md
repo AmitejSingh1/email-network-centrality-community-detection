@@ -43,8 +43,8 @@
 - **Rationale:** Ensures complete reproducibility across operating systems and prevents non-deterministic ranking shifts during top-$k$ set evaluations.
 
 ## Decision 2.2: Analytical Rationale for Self-Loop Exclusion in PageRank
-- **Context:** In $G_{\text{raw}}$, a singleton node with a self-loop acts as a sink that circulates $85\%$ of its mass back into itself, achieving $PR \approx 0.001209$ (rank 380 out of 1,005). An individual who never communicated with anyone else is artificially elevated above $62\%$ of the institution.
-- **Choice:** By removing self-loops in $G_{\text{analysis}}$, singleton nodes become true dangling nodes, correctly placing them at the bottom of the prominence distribution ($PR \approx 0.0001976$, rank 987 out of 1,005).
+- **Context:** In $G_{\text{raw}}$, a singleton node with a self-loop acts as a sink that circulates $85\%$ of its mass back into itself, achieving $PR \approx 0.001209$ (competition rank 278 out of 1,005; competition rank 966 in $G_{\text{analysis}}$). An individual who never communicated with anyone else is artificially elevated above $72\%$ of the institution.
+- **Choice:** By removing self-loops in $G_{\text{analysis}}$, singleton nodes become true dangling nodes, correctly placing them at the bottom of the prominence distribution ($PR \approx 0.0001976$, competition rank 966 out of 1,005, tied with 39 other zero-in-degree nodes).
 
 ## Decision 3.1: Unweighted Undirected Projection for Louvain Modularity Optimization
 - **Context:** Standard Louvain (Lecture 7) optimizes modularity under a symmetric adjacency matrix assumption. Directed modularity exists but is less standard and alters the definition of community boundaries.

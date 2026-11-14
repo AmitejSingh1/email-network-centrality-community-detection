@@ -189,7 +189,7 @@ def make_fig2():
 
     axes[0].axhline(dept_sizes.median(), color="#DD6B20", linestyle="--", linewidth=1.1, label=f"Median = {dept_sizes.median():.1f}")
     axes[0].set_xticks(range(len(labels)))
-    axes[0].set_xticklabels(labels, fontsize=8.0, weight="bold")
+    axes[0].set_xticklabels(labels, fontsize=7.2, weight="bold")
     axes[0].set_xlabel("Department Identifier (Top 10)", fontsize=8.5, weight="bold", labelpad=3)
     axes[0].set_ylabel("Affiliated Members", fontsize=8.5, weight="bold", labelpad=3)
     axes[0].set_title("(a) Top 10 Department Populations", fontsize=9.5, weight="bold", pad=5)

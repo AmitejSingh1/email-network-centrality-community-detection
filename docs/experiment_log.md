@@ -76,7 +76,7 @@
   - PageRank-Boosted (Node 451, Dept 14): In-degree = 8 (Rank 659) vs. PR = $0.00307$ (Rank 37), $\Delta R = +622$. Senders include Node 365 ($PR = 0.00306$, Rank 39, Out-degree = 1), transferring $100\%$ of endorsement mass directly to Node 451.
   - In-Degree-Boosted (Node 83, Dept 36): In-degree = 85 (Rank 46) vs. PR Rank 60. Receives links from broadcasters with mean out-degree $79.1$, diluting incoming endorsements ($12.8\times$ smaller contribution per link than Node 451).
 - **Damping Factor Sensitivity ($d \in \{0.75, 0.85, 0.95\}$):** High pairwise stability ($\rho_s > 0.996$; top-$k$ overlap $\ge 90\%$).
-- **Self-Loop Robustness Check:** $\rho_s = 0.8732$ between $G_{\text{raw}}$ and $G_{\text{analysis}}$. Self-loops in $G_{\text{raw}}$ artificially elevated 19 peripheral singletons from rank 987 to rank 380 via reflexive trapping.
+- **Self-Loop Robustness Check:** $\rho_s = 0.8732$ between $G_{\text{raw}}$ and $G_{\text{analysis}}$. Self-loops in $G_{\text{raw}}$ artificially elevated 19 peripheral singletons from competition rank 966 in $G_{\text{analysis}}$ to competition rank 278 in $G_{\text{raw}}$ via reflexive trapping.
 - **Generated Publication Figures:**
   - `reports/figures/fig4_pagerank_vs_indegree.{png,pdf}`
   - `reports/figures/fig5_top_ranked_comparison.{png,pdf}`
